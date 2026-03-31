@@ -1,0 +1,13 @@
+tensorflow-cpu>=2.10
+torch
+torchvision
+torchaudio
+numpy<2.0
+scipy<1.14
+scikit-learn
+matplotlib
+h5py
+pandas<2.4
+tqdm
+jupyter
+ipython

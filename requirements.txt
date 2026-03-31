@@ -1,0 +1,13 @@
+tensorflow>=2.10
+torch
+torchvision
+torchaudio
+numpy
+scipy
+scikit-learn
+matplotlib
+h5py
+pandas
+tqdm
+jupyter
+ipython
