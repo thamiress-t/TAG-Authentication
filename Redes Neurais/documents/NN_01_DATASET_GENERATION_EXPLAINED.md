@@ -9,8 +9,7 @@ This document provides a comprehensive explanation of how the 100,000 training s
 
 | Property | Value |
 |----------|-------|
-| Total samples | 100,000 |
-| Features per sample | 4 (correlator, channel estimate, SNR, energy) |
+| Total samples | 100,000 |gitannel estimate, SNR, energy) |
 | Labels | Binary (1=authentic/H1, 0=fraudulent/H0) |
 | Class balance | 50,000 authentic, 50,000 fraudulent |
 | SNR range | 8 to 12 dB |
