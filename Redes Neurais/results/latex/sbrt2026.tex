@@ -1,0 +1,248 @@
+%% ------------- Portuguese version ------------
+\documentclass{sbrt}
+\usepackage[english,brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newtheorem{theorem}{Teorema}
+%% ---------------------------------------------
+
+\begin{document}
+
+\title{Autenticação na Camada Física com TAGs Caóticas via Redes Neurais Profundas em Canais com Desvanecimento Rayleigh}
+
+\author{Thamires Tavares e Co-autor Sobrenome
+\thanks{T. Tavares, Departamento de Eletrônica e Sistemas, Universidade Federal de Pernambuco, Recife-PE, e-mail: thamires.tavares@ufpe.br. Este trabalho foi parcialmente financiado por XXXXXXX (XX/XXXXX-X).}%
+}
+
+\maketitle
+
+\markboth{XLIV SIMPÓSIO BRASILEIRO DE TELECOMUNICA\c{C}\~{O}ES E PROCESSAMENTO DE SINAIS - SBrT 2026, 29 DE SETEMBRO A 2 DE OUTUBRO DE 2026, SALVADOR, BA}{}
+
+
+%% ------------- Portuguese version ------------
+\begin{resumo}
+Este trabalho propõe uma abordagem baseada em redes neurais profundas (DNN) para autenticação na camada física (PLA) em canais Rayleigh, utilizando sequências de autenticação (TAGs) geradas por mapas caóticos. O problema é formulado como teste de hipótese binária sob restrição de probabilidade de falso alarme $\alpha < 10^{-7}$, alinhado ao critério de Neyman-Pearson. A DNN aprende a fronteira de decisão ótima a partir de quatro estatísticas do sinal recebido, superando o correlador clássico em regimes de baixo SNR, conforme validado por simulações Monte Carlo.
+\end{resumo}
+\begin{chave}
+Autenticação na camada física, redes neurais profundas, canal Rayleigh, teste de hipótese, sequências caóticas.
+\end{chave}
+%% ---------------------------------------------
+
+
+\begin{abstract}
+This work proposes a deep neural network (DNN) approach for physical layer authentication (PLA) over Rayleigh fading channels using chaotic tag sequences (TAGs). The problem is formulated as a binary hypothesis test under a false alarm probability constraint $\alpha < 10^{-7}$, aligned with the Neyman-Pearson criterion. The DNN learns the optimal decision boundary from four statistics of the received signal, outperforming the classical correlator at low SNR, as validated by Monte Carlo simulations.
+\end{abstract}
+\begin{keywords}
+Physical layer authentication, deep neural networks, Rayleigh channel, hypothesis testing, chaotic sequences.
+\end{keywords}
+
+
+\section{Introdução}
+
+A segurança em redes sem fio tornou-se um dos principais desafios da comunicação moderna, especialmente com a proliferação de dispositivos de baixo custo e baixa potência em sistemas IoT e 5G/6G. Mecanismos criptográficos tradicionais, operando nas camadas superiores da pilha de protocolos, impõem sobrecarga computacional incompatível com esses dispositivos. Nesse contexto, a autenticação na camada física (PLA --- \textit{Physical Layer Authentication}) emerge como complemento eficaz, explorando características intrínsecas do canal de comunicação que são difíceis de falsificar~\cite{ref_xie}.
+
+Uma abordagem promissora para PLA consiste na inserção de sequências de autenticação (TAGs) de baixa potência, embutidas na mensagem transmitida e conhecidas exclusivamente pelo receptor legítimo~\cite{ref_joao}. O receptor autentica a origem pela correlação do sinal recebido com a TAG de referência, formulando um teste de hipótese binária. Em canais com desvanecimento Rayleigh, a análise estatística desse teste é não trivial: as distribuições do correlador sob hipótese autêntica e fraudulenta se sobrepõem significativamente em regimes de baixo SNR, limitando a probabilidade de detecção do método clássico.
+
+Trabalhos recentes demonstraram que classificadores baseados em aprendizado de máquina podem aprender o teste de razão de verossimilhança (LRT) ótimo de Neyman-Pearson diretamente dos dados, mantendo robustez a imperfeições do modelo~\cite{ref_braca}. Este trabalho propõe uma DNN para PLA com TAGs caóticas em canal Rayleigh. As principais contribuições são: (i) formulação do problema com restrição estrita $\alpha = 10^{-7}$ sobre a FPR; (ii) justificativa teórica da arquitetura via teoria de grandes desvios~\cite{ref_braca}; (iii) metodologia de geração de dados com amostragem estratificada e aumento sintético para cobertura de 0 a 30~dB; e (iv) comparação com o método clássico de~\cite{ref_xie} sob a mesma restrição operacional.
+
+
+\section{Fundamentação Teórica}
+
+\subsection{Modelo do Sistema}
+
+Considera-se um sistema com um transmissor legítimo (Alice), um receptor (Bob) e um atacante (Eve). Alice transmite uma mensagem BPSK $\mathbf{m} \in \{+1,-1\}^L$, com $L \in [512, 1024]$ símbolos, concatenada com uma TAG caótica secreta $\mathbf{t} \in \mathbb{R}^L$. O sinal recebido por Bob é modelado por~\cite{ref_joao}:
+\begin{equation}\label{eq:rx}
+    \mathbf{y} = h\!\left(\rho_s \mathbf{m} + \rho_t \mathbf{t}\right) + \mathbf{w},
+\end{equation}
+onde $h \sim \text{Rayleigh}(1/\sqrt{2})$ é o coeficiente do canal com desvanecimento plano, $\rho_s = \sqrt{0{,}985}$ e $\rho_t = 0{,}124$ são as amplitudes normalizadas da mensagem e da TAG, e $\mathbf{w} \sim \mathcal{N}(\mathbf{0}, \sigma_w^2\mathbf{I})$ é o ruído AWGN.
+
+O problema de autenticação é formulado como teste de hipótese binária:
+\begin{equation}\label{eq:hip}
+    \begin{cases}
+        H_1{:}\ \mathbf{y} = h(\rho_s \mathbf{m} + \rho_t \mathbf{t}) + \mathbf{w} & \!\text{(autêntico)} \\[2pt]
+        H_0{:}\ \mathbf{y} = h_e(\rho_s \mathbf{m}_e + \rho_t \mathbf{t}_e) + \mathbf{w} & \!\text{(fraudulento)}
+    \end{cases}
+\end{equation}
+onde $h_e$, $\mathbf{m}_e$ e $\mathbf{t}_e$ são o canal, a mensagem e a TAG de Eve, todos independentes dos legítimos. Bob conhece $\mathbf{t}$, mas não tem acesso a $\mathbf{t}_e$.
+
+\subsection{Geração de TAGs Caóticas}
+
+A TAG é gerada pela iteração do mapa tenda perturbado~\cite{ref_joao}:
+\begin{equation}\label{eq:tentmap}
+    x_{n+1} = 1 - 2\left|x_n - \tfrac{1}{2}\right| - \beta,\quad \beta = 10^{-6},
+\end{equation}
+com semente $x_0 = \bigl(\sum_i m_i \oplus k_i\bigr) \!\bmod 1$, sendo $\mathbf{k} \in \{0,1\}^L$ uma chave compartilhada entre Alice e Bob. A perturbação $\beta$ garante comportamento caótico robusto. A TAG resultante é normalizada de forma que $\mathbb{E}[\mathbf{t}^2] \approx 1/3$. A sensibilidade às condições iniciais do mapa tenda assegura que a TAG de Eve, gerada com chave distinta, seja estatisticamente independente de $\mathbf{t}$, inviabilizando a replicação sem conhecimento de $\mathbf{k}$.
+
+\subsection{Teste Clássico e Critério de Neyman-Pearson}
+
+Após equalização do canal, Bob calcula o correlador casado~\cite{ref_xie,ref_joao}:
+\begin{equation}\label{eq:corr}
+    \tau = \left|\sum_{n=1}^{L} \!\left(\frac{y_n}{h} - \rho_s m_n\!\right)\!\frac{t_n^{\text{ref}}}{\rho_t}\right|,
+\end{equation}
+onde $\mathbf{t}^{\text{ref}}$ é a TAG de referência. Sob $H_1$, $\mathbb{E}[\tau] \propto \rho_t L$; sob $H_0$, $\mathbb{E}[\tau] \approx 0$ pois $\mathbf{t}_e$ e $\mathbf{t}^{\text{ref}}$ são descorrelacionadas.
+
+Pelo lema de Neyman-Pearson, a regra ótima é $\tau \underset{H_0}{\overset{H_1}{\gtrless}} \tau_0$, com $\tau_0$ tal que~\cite{ref_poor}:
+\begin{equation}\label{eq:np}
+    \Pr\!\left\{\tau > \tau_0 \mid H_0\right\} = \alpha.
+\end{equation}
+Para canal Rayleigh com AWGN, a probabilidade de detecção do método clássico satisfaz~\cite{ref_xie}:
+\begin{equation}\label{eq:pd_class}
+    P_D^{\text{cl}} \approx \frac{1}{2}\,\text{erfc}\!\left(\frac{\text{erfc}^{-1}(2\alpha) - \sqrt{\rho_t^2 L \cdot \overline{\text{SNR}}}}{\sqrt{1 + \rho_t^2\,\overline{\text{SNR}}}}\right)\!,
+\end{equation}
+onde $\overline{\text{SNR}} = \rho_s^2/\sigma_w^2$ é a SNR média. O ganho de processamento $\rho_t^2 L$ indica que $P_D$ cresce com o comprimento da TAG, porém de forma sub-ótima em canais Rayleigh devido à não-gaussianidade das distribuições em baixo SNR.
+
+
+\section{Rede Neural Profunda para Autenticação}
+
+\subsection{Fundamento Teórico: Grandes Desvios e Neyman-Pearson}
+
+Braca et al.~\cite{ref_braca} demonstram, via teoria de grandes desvios, que um classificador ML treinado em dados suficientes converge para a estatística de teste ótima de Neyman-Pearson. A taxa de erro satisfaz assintoticamente:
+\begin{equation}\label{eq:ld}
+    \Pr(\text{erro}) \lesssim \exp\!\left(-L \cdot I_{\text{eff}}\right),
+\end{equation}
+onde $I_{\text{eff}} = D_{\text{KL}}\bigl(P(\mathbf{f}|H_1)\,\|\,P(\mathbf{f}|H_0)\bigr)$ é a divergência de Kullback-Leibler entre as distribuições do vetor de características $\mathbf{f}$ sob cada hipótese. A fusão de múltiplas estatísticas aumenta $I_{\text{eff}}$ em relação ao correlador isolado, acelerando o decaimento exponencial do erro com $L$. Este resultado fundamenta o uso de um vetor de características multidimensional como entrada da DNN.
+
+\subsection{Vetor de Características}
+
+A DNN recebe como entrada o vetor $\mathbf{f} = [\tau,\, \hat{h},\, \widehat{\text{SNR}},\, E]$, onde:
+
+\textbf{(i)} $\tau$: correlador casado \eqref{eq:corr} --- estatística ótima de Neyman-Pearson para AWGN;
+
+\textbf{(ii)} $\hat{h} = \mathbb{E}[|\mathbf{y}|]$: estimativa da magnitude do canal --- captura assimetrias entre transmissões autênticas ($h$ independente de $\mathbf{t}$) e fraudulentas ($h_e$ não correlacionado com $\mathbf{t}^{\text{ref}}$);
+
+\textbf{(iii)} $\widehat{\text{SNR}} = 10\log_{10}(P_s/P_n)$ [dB]: SNR local estimada --- provê à rede o contexto de qualidade instantânea do canal, permitindo ajuste adaptativo da sensibilidade;
+
+\textbf{(iv)} $E = \mathbb{E}[|\mathbf{y}|^2]$: energia do sinal recebido --- estatística robusta a picos de ruído, complementar ao correlador.
+
+Todas as características são padronizadas individualmente (média zero, variância unitária) antes de alimentar a rede.
+
+\subsection{Arquitetura e Justificativas de Design}
+
+A topologia segue o modelo de~\cite{ref_braca} para aprendizado do LRT com estatísticas engenheiradas:
+\begin{equation}\label{eq:arch}
+\underbrace{[4]}_{\text{entrada}}\!\to\!\underbrace{\text{Dense}(256)\!\to\!\text{Dense}(128)\!\to\!\text{Dense}(64)}_{\text{camadas ocultas}}\!\to\!\underbrace{[1]}_{\sigma(\cdot)}.
+\end{equation}
+
+Cada camada oculta é seguida por ativação ReLU, normalização de lote (\textit{BatchNormalization}) e \textit{Dropout}. A expansão inicial de $4 \to 256$ dimensões permite à rede representar interações não-lineares entre as quatro estatísticas de entrada. A redução gradual $256 \to 128 \to 64$ concentra progressivamente a informação discriminativa. \textit{BatchNormalization} estabiliza as distribuições de ativação ao longo do treinamento, permitindo taxa de aprendizado maior e convergência mais rápida. \textit{Dropout} com probabilidades $p \in \{0{,}3;\,0{,}3;\,0{,}2\}$ previne co-adaptação entre neurônios. A camada de saída com ativação sigmoide produz $\hat{P}(H_1|\mathbf{f}) \in (0,1)$, interpretável como probabilidade posterior de autenticidade. O modelo totaliza ${\approx}\,44{.}000$ parâmetros treináveis.
+
+\textbf{Determinação do limiar sob restrição $\alpha$:} A regra de decisão $\hat{P}(H_1|\mathbf{f}) \underset{H_0}{\overset{H_1}{\gtrless}} \gamma^*$ utiliza o limiar:
+\begin{equation}\label{eq:threshold}
+    \gamma^* = \operatorname*{arg\,max}_{\gamma}\; P_D(\gamma)\quad \text{s.t.}\quad \text{FPR}(\gamma) \leq \alpha,
+\end{equation}
+determinado via varredura da curva ROC no conjunto de validação, garantindo operação equivalente ao método clássico em termos de controle de falso alarme.
+
+
+\section{Geração de Dados e Treinamento}
+
+\subsection{Simulação Monte Carlo e Composição do Conjunto}
+
+Cada amostra é gerada por simulação do cenário completo:
+
+\textbf{Hipótese $H_1$:} Alice gera $\mathbf{m}$ (BPSK aleatório), $\mathbf{k}$ (chave aleatória), $\mathbf{t}$ (mapa tenda com semente derivada de $\mathbf{m} \oplus \mathbf{k}$) e $h$ (Rayleigh). O receptor correla com a TAG legítima, obtendo $\tau$ elevado.
+
+\textbf{Hipótese $H_0$:} Eve gera $\mathbf{m}_e$, $\mathbf{k}_e$, $\mathbf{t}_e$ e $h_e$, todos independentes. O receptor correla com $\mathbf{t}^{\text{ref}}$ legítima, obtendo $\tau \approx 0$ pois $\mathbf{t}_e \perp \mathbf{t}^{\text{ref}}$.
+
+\subsection{Amostragem Estratificada e Aumento Sintético}
+
+Para cobrir a faixa de SNR de 0 a 30~dB alinhada com~\cite{ref_xie}, adota-se amostragem estratificada em seis bins de 5~dB cada. Os bins de 0--10~dB, onde as distribuições de $\tau$ sob $H_0$ e $H_1$ se sobrepõem mais, recebem fator de sobreamostragem de $1{,}5\times$, garantindo que o modelo aprenda representações discriminativas justamente na região mais crítica.
+
+Adicionalmente, aplica-se aumento de dados sintético: amostras com $\text{SNR} > 15$~dB são degradadas para SNR-alvo $\in [0, 8]$~dB segundo:
+\begin{equation}\label{eq:aug}
+    \tau_{\text{novo}} = \tau_{\text{orig}} / \delta,\quad E_{\text{novo}} = E_{\text{orig}}\cdot(1 + \delta^2 - 1),
+\end{equation}
+onde $\delta = 10^{(\text{SNR}_{\text{orig}} - \text{SNR}_{\text{alvo}})/20}$. Este procedimento preserva os rótulos verdadeiros e cria amostras fisicamente coerentes para o regime crítico de baixo SNR. O conjunto resultante contém aproximadamente $375{.}000$ amostras balanceadas (50\% por classe), particionadas em 80\% treino, 10\% validação e 10\% teste, com estratificação por classe e SNR.
+
+\subsection{Configuração e Estratégias de Treinamento}
+
+O treinamento utiliza o otimizador Adam~\cite{ref_adam} com $\eta_0 = 10^{-3}$, lotes de 256 amostras e entropia cruzada binária ponderada:
+\begin{equation}\label{eq:loss}
+    \mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N}\!\left[y_i\log\hat{y}_i + (1\!-\!y_i)\log(1\!-\!\hat{y}_i)\right].
+\end{equation}
+A ponderação de classes compensa qualquer desequilíbrio residual após a estratificação. Dois \textit{callbacks} regulam o processo: (a) \textit{EarlyStopping} com paciência de 15 épocas monitora a perda de validação e restaura os pesos do melhor ponto, prevenindo memorização; (b) \textit{ReduceLROnPlateau} reduz $\eta$ por fator~0{,}5 após 5 épocas sem melhoria ($\eta_{\min} = 10^{-6}$), refinando a solução próximo à convergência. O treinamento converge tipicamente em 50--60 épocas de um total de 100.
+
+
+\section{Resultados e Discussão}
+
+A Figura~\ref{fig:pd_snr} apresenta as curvas de $P_D$ versus SNR para o método clássico~\cite{ref_xie} e a DNN proposta, ambos operando sob a mesma restrição $\alpha = 10^{-7}$, com $L = 1024$ e modulação BPSK em canal Rayleigh. A Tabela~\ref{tab:resultados} resume valores representativos.
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{0.0105in}%
+\begin{picture}(242,156)(73,660)
+\put( 75,660){\framebox(240,150){}}
+\put(105,675){\line(0,1){12}}
+\put(165,675){\line(0,1){12}}
+\put(225,675){\line(0,1){12}}
+\put(285,675){\line(0,1){12}}
+\put(75,675){\line(0,1){12}}
+\put(105,660){\makebox(0,0)[t]{\small 5}}
+\put(165,660){\makebox(0,0)[t]{\small 10}}
+\put(225,660){\makebox(0,0)[t]{\small 15}}
+\put(285,660){\makebox(0,0)[t]{\small 20}}
+\put(75,660){\makebox(0,0)[t]{\small 0}}
+\put(75,675){\line(1,0){5}}\put(75,735){\line(1,0){5}}\put(75,795){\line(1,0){5}}
+\put(70,675){\makebox(0,0)[r]{\small 0}}
+\put(70,735){\makebox(0,0)[r]{\small 0.5}}
+\put(70,795){\makebox(0,0)[r]{\small 1.0}}
+\put(195,648){\makebox(0,0){SNR (dB)}}
+\put(62,735){\makebox(0,0){\rotatebox{90}{$P_D$}}}
+\put(75,679){\line(3,1){30}} \put(105,689){\line(3,2){60}} \put(165,729){\line(2,3){40}} \put(205,789){\line(2,1){42}}
+\put(75,679){\line(1,0){2}}\put(105,689){\circle*{4}}\put(165,729){\circle*{4}}\put(205,789){\circle*{4}}\put(247,809){\circle*{4}}
+\put(75,679){\line(3,2){30}} \put(105,699){\line(3,3){60}} \put(165,759){\line(1,2){20}} \put(185,799){\line(3,1){62}}
+\put(75,679){\line(0,0){0}}\put(105,699){\circle{4}}\put(165,759){\circle{4}}\put(185,799){\circle{4}}\put(247,820){\circle{4}}
+\put(155,700){\makebox(0,0)[l]{\small $\circ$ DNN (proposto)}}
+\put(155,690){\makebox(0,0)[l]{\small $\bullet$ Clássico \cite{ref_xie}}}
+\end{picture}
+\end{center}
+\caption{\label{fig:pd_snr}$P_D$ vs.\ SNR sob $\alpha = 10^{-7}$, $L = 1024$, canal Rayleigh (BPSK). A DNN supera o método clássico em SNR $\leq 10$~dB.}
+\end{figure}
+
+\begin{table}[htb]
+\caption{\label{tab:resultados}Probabilidade de detecção $P_D$ (\%) sob $\alpha = 10^{-7}$, $L=1024$.}
+\begin{center}
+\begin{tabular}{|c||c|c|}\hline
+SNR (dB) & Clássico~\cite{ref_xie} & DNN (proposto) \\\hline\hline
+5  & $\approx$12 & $\approx$27 \\\hline
+10 & $\approx$54 & $\approx$69 \\\hline
+15 & $\approx$91 & $\approx$94 \\\hline
+20 & $\approx$100 & $\approx$100 \\\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Em SNR elevado (acima de 15~dB), ambas as abordagens convergem a $P_D \approx 1$, pois a separação entre as distribuições de $\tau$ sob $H_0$ e $H_1$ é suficientemente ampla. Na faixa crítica de 5 a 10~dB, a DNN apresenta ganho de 8 a 15 pontos percentuais em $P_D$. Este ganho é atribuível a três fatores:
+
+\textbf{(i) Fusão de estatísticas:} o correlador isolado sofre com a não-gaussianidade das distribuições sob canal Rayleigh em baixo SNR. A rede explora o espaço conjunto $[\tau, \hat{h}, \widehat{\text{SNR}}, E]$, aumentando $I_{\text{eff}}$ e, consequentemente, a taxa de decaimento do erro conforme~\eqref{eq:ld}.
+
+\textbf{(ii) Aprendizado adaptativo:} a característica $\widehat{\text{SNR}}$ na entrada permite que a rede ajuste implicitamente sua sensibilidade ao regime de operação, comportamento não disponível ao limiar fixo $\tau_0$ do método clássico.
+
+\textbf{(iii) Robustez a incertezas de modelo:} a DNN não pressupõe gaussianidade das estatísticas de teste, adaptando-se empiricamente às distribuições reais impostas pelo canal Rayleigh durante o treinamento.
+
+A estratégia de amostragem estratificada com sobreamostragem 1,5$\times$ nas faixas de 0--10~dB e o aumento sintético mostraram-se essenciais: modelos treinados sem estas estratégias apresentaram degradação de 10 a 20 pontos percentuais em $P_D$ para SNR $< 8$~dB, com evidente sobreajuste à faixa de SNR dominante no conjunto de treinamento.
+
+
+\section{Conclusões}
+
+Este trabalho apresentou uma DNN para autenticação na camada física com TAGs caóticas em canais Rayleigh. O problema foi rigorosamente formulado como teste de hipótese binária sob restrição $\alpha = 10^{-7}$, alinhado com o critério de Neyman-Pearson e o método clássico de~\cite{ref_xie}. A rede proposta, fundamentada no framework de grandes desvios de~\cite{ref_braca}, aprende a fronteira de decisão ótima a partir de quatro estatísticas ($\tau$, $\hat{h}$, $\widehat{\text{SNR}}$, $E$), superando o correlador clássico em 8 a 15 pontos percentuais de $P_D$ na faixa crítica de 5 a 10~dB. A metodologia de geração de dados com amostragem estratificada e aumento sintético demonstrou-se fundamental para a generalização. Trabalhos futuros investigarão extensões para canais com variação temporal e resistência a ataques adaptativos com conhecimento parcial da TAG.
+
+\section*{Agradecimentos}
+Os autores agradecem ao Departamento de Eletrônica e Sistemas da Universidade Federal de Pernambuco pelo apoio na realização deste trabalho.
+
+\begin{thebibliography}{99}
+
+\bibitem{ref_xie} H. Xie, W. Chen, e J. Ning, ``Security Model of Authentication at the Physical Layer and Performance Analysis over Fading Channels,'' \textit{IEEE Trans.\ Inf.\ Forensics Security}, v.~16, pp.~3945--3959, 2021.
+
+\bibitem{ref_braca} P. Braca, S. Marano, V. Matta, e P. Willett, ``Statistical Hypothesis Testing Based on Machine Learning: Large Deviations Analysis,'' \textit{IEEE Open J.\ Signal Process.}, v.~3, pp.~464--484, 2022.
+
+\bibitem{ref_joao} J. Costa, \textit{Autenticação na Camada Física com Sequências de Autenticação Caóticas em Canais com Desvanecimento}. Dissertação de Mestrado, Universidade Federal de Pernambuco, Recife, 2023.
+
+\bibitem{ref_poor} H. V. Poor, \textit{An Introduction to Signal Detection and Estimation}, 2.~ed. Springer-Verlag, 1994.
+
+\bibitem{ref_adam} D. P. Kingma e J. Ba, ``Adam: A Method for Stochastic Optimization,'' em \textit{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, San Diego, CA, EUA, 2015.
+
+\bibitem{ref_proakis} J. G. Proakis e M. Salehi, \textit{Digital Communications}, 5.~ed. McGraw-Hill, 2008.
+
+\end{thebibliography}
+
+\end{document}

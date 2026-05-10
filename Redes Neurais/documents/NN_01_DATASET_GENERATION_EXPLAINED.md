@@ -11,8 +11,8 @@ This document provides a comprehensive explanation of how the 100,000 training s
 |----------|-------|
 | Total samples | ~450,000 (300k base + augmentation) |
 | Features per sample | 4 (correlator, channel estimate, SNR, energy) |
-| Labels | Binary (1=authentic/H1, 0=fraudulent/H0) |
-| Class balance | 50% authentic, 50% fraudulent |
+| Labels | Binary (1=authentic/H1, 0=unauthenticated/H0) |
+| Class balance | 50% authentic, 50% unauthenticated |
 | SNR range | **0 to 30 dB** (expanded from 8-12 dB) |
 | SNR stratification | 6 bins (~5 dB each) with oversampling of critical regions |
 | Data augmentation | YES - simulates low SNR conditions (0-8 dB) |
@@ -217,55 +217,44 @@ y_minus_msg = (received / h - ρ_s × msg) / ρ_t
 
 ---
 
-### **Step 4b: H0 Scenario (Fraudulent Transmission)**
+### **Step 4b: H0 Scenario (Unauthenticated — No TAG)**
 
 When `is_authentic=False`:
 
-#### **4b.1: Attacker's Signal Generation**
+#### **4b.1: Signal Without TAG**
 ```python
-msg_fake = modulator_bpsk(L)           # Different message (attacker's)
-key_fake = np.random.randint(0, 2, L)  # Different key (attacker's)
-tag_fake = generate_tag(msg_fake, key_fake, L, K=512)  # Attacker's TAG
+msg = modulator_bpsk(L)   # BPSK message (same as receiver expects)
+# No TAG is added — unauthenticated transmitter
+x = ρ_s × msg            # Message only, no ρ_t·tag term
 ```
 
-Both message and TAG are **completely different** from legitimate ones.
+The transmitter sends only the message component. There is no authentication TAG.
 
-#### **4b.2: Attacker's Channel (Independent)**
+#### **4b.2: Channel & AWGN**
 ```python
-h_fake = rayleigh_channel(1)[0]  # INDEPENDENT Rayleigh draw
-# Different from H1's h
+h = rayleigh_channel(1)[0]   # Rayleigh fading (same draw as H1)
+y = h × x + AWGN(SNR)        # y = h·ρ_s·msg + w
 ```
 
-**Key Point**: H0 and H1 use **independent channel realizations**:
-- $h \neq h_{fake}$ (different random values)
-- Models external attacker with uncorrelated channel
-
-#### **4b.3: Fraudulent Signal Transmission**
+#### **4b.3: Detection (Receiver Tries to Authenticate)**
 ```python
-x_fake = ρ_s × msg_fake + ρ_t × tag_fake
-y_fake = h_fake × x_fake + AWGN(SNR)
-```
+msg     = modulator_bpsk(L)
+key     = np.random.randint(0, 2, L)
+tag_ref = generate_tag(msg, key, L, K=512)  # Receiver's expected TAG
 
-#### **4b.4: Detection (Receiver Authenticates)**
-```python
-# Receiver DOESN'T know attacker's tag
-# Generates OWN legitimate TAG with random key:
-key = np.random.randint(0, 2, L)
-tag_ref = generate_tag(msg, key, L, K=512)  # Receiver's TAG (wrong!)
+# Equalize:
+y_eq = y / h    # y/h = ρ_s·msg + w/h   (no TAG component!)
 
-# Estimate received TAG:
-y_minus_msg = (y_fake / h_fake - ρ_s × msg) / ρ_t
-
-# Compute correlator statistic:
-τ_H0 = |sum(y_minus_msg × tag_ref)|
+# Correlator:
+τ_H0 = |sum((y_eq - ρ_s·msg) × tag_ref)| / ρ_t
 ```
 
 **Result**:
-- Should be **SMALL** (correlator doesn't match attacker's TAG)
-- Expected value: τ_H0 ≈ noise level (1-5)
+- Should be **SMALL** — the residual `(y_eq − ρ_s·msg) = w/h` is pure noise
+- Expected value: τ_H0 ≈ noise level
 - Much smaller than H1 values
 
-**Why?** Because `tag_ref` (legitimate TAG) is uncorrelated with `y_minus_msg` (attacker's TAG estimate).
+**Why?** Because `tag_ref` is uncorrelated with `w/h` (Gaussian noise), so the inner product is just a noise realization.
 
 ---
 
@@ -426,39 +415,38 @@ Output Features:
 
 ---
 
-### **Sample #1235: H0 (Fraudulent)**
+### **Sample #1235: H0 (Unauthenticated — No TAG)**
 
 ```
 Input Parameters:
 ├─ SNR: 9.8 dB
 ├─ L: 856 samples
-└─ Type: H0 (fraudulent)
+└─ Type: H0 (unauthenticated)
 
 Generation Process:
-├─ msg_fake[BPSK]:      [+1, +1, -1, ...] × 856 (attacker's message)
-├─ key_fake[random]:     [0, 1, 1, ...] × 856 (attacker's key)
-├─ tag_fake[chaotic]:    [0.102, -0.567, ...] × 856 (attacker's TAG)
-├─ h_fake[Rayleigh]:     0.734 (INDEPENDENT from previous h=0.867)
-├─ signal_fake:          x_fake = √0.985 × msg_fake + 0.124 × tag_fake
-├─ channel_effect:       y = 0.734 × x_fake (signal scaled by h_fake)
-├─ AWGN_added:          w ~ N(0, σ²) for 9.8 dB
-├─ received:             y = 0.734×x_fake + w
-├─ receiver_generates:   tag_ref = random TAG (wrong! ≠ tag_fake)
-├─ correlator_input:     y_corrected = y/h_fake - √0.985×msg / 0.124
-└─ correlation:          τ = |sum(y_corrected × tag_ref)|  (uncorrelated!)
+├─ msg[BPSK]:            [+1, +1, -1, ...] × 856
+├─ h[Rayleigh]:          0.734
+├─ signal (no TAG):      x = √0.985 × msg   (ρ_t·tag term is ABSENT)
+├─ channel_effect:       h×x = 0.734 × x
+├─ AWGN_added:           w ~ N(0, σ²) for 9.8 dB
+├─ received:             y = 0.734×x + w
+├─ equalized:            y_eq = y/h = ρ_s·msg + w/h
+├─ receiver_generates:   tag_ref (from shared secret)
+├─ residual:             y_eq - ρ_s·msg = w/h  (pure noise — no TAG!)
+└─ correlation:          τ = |sum(w/h × tag_ref)| / ρ_t  ≈ noise level
 
 Output Features:
-├─ [1] Correlator:       2.45 (SMALL ✓)
+├─ [1] Correlator:       2.45 (SMALL ✓ — only noise in residual)
 ├─ [2] H_estimate:       0.81
 ├─ [3] SNR_local:        9.7 dB
 ├─ [4] Energy:           0.98
-└─ Label:                0 (Fraudulent)
+└─ Label:                0 (Unauthenticated)
 ```
 
 **Explanation**:
-- Receiver correlates with **wrong** TAG (doesn't know attacker's)
-- Result is small (2.45) → classifier should output "fraudulent"
-- tag_ref and y_minus_msg are uncorrelated → correlation ≈ noise level
+- Residual after removing message = pure noise `w/h` (no TAG was transmitted)
+- Inner product of noise with `tag_ref` → small by orthogonality
+- Result is small (2.45) → classifier correctly outputs "unauthenticated"
 
 ---
 
@@ -467,7 +455,7 @@ Output Features:
 ### **1. Signal Structure**
 - Each sample encodes a complete **hypothesis test outcome**
 - H1 samples: Legitimate TAG present → correlator = LARGE
-- H0 samples: Unknown fraudulent TAG → correlator = SMALL
+- H0 samples: No TAG — residual is pure noise → correlator = SMALL
 - This mirrors the Monte Carlo hypothesis test from "Simulações Monte Carlo"
 
 ### **2. Variability**
