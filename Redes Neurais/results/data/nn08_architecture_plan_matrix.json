@@ -1,0 +1,396 @@
+{
+  "metadata": {
+    "alpha": 1e-07,
+    "snr_bins": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      25,
+      30
+    ],
+    "sources": [
+      "nn02b_ablation_results.json",
+      "nn02c_ablation_results.json",
+      "nn07_unified_comparison.json"
+    ],
+    "description": "Plano NN_08 por variantes fixas (tau e z_eq) com comparação entre arquiteturas"
+  },
+  "architectures_plan": {
+    "tau": [
+      "DNN",
+      "SVM-RBF",
+      "KNN-5",
+      "XGBoost"
+    ],
+    "z_eq": [
+      "CNN-1D",
+      "MLP",
+      "SVM-RBF",
+      "XGBoost"
+    ]
+  },
+  "records": [
+    {
+      "family": "tau",
+      "variant": "V5",
+      "feature_set": "[|tau|]",
+      "architecture": "DNN",
+      "pd_0db": 0.0,
+      "pd_5db": 0.9896265560165975,
+      "status": "executado",
+      "source": "NN_02b"
+    },
+    {
+      "family": "tau",
+      "variant": "V5",
+      "feature_set": "[|tau|]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V5",
+      "feature_set": "[|tau|]",
+      "architecture": "KNN-5",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V5",
+      "feature_set": "[|tau|]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V6",
+      "feature_set": "[|tau|, h_hat]",
+      "architecture": "DNN",
+      "pd_0db": 0.8465636654235482,
+      "pd_5db": 0.995591286307054,
+      "status": "executado",
+      "source": "NN_02b"
+    },
+    {
+      "family": "tau",
+      "variant": "V6",
+      "feature_set": "[|tau|, h_hat]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V6",
+      "feature_set": "[|tau|, h_hat]",
+      "architecture": "KNN-5",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V6",
+      "feature_set": "[|tau|, h_hat]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V7",
+      "feature_set": "[|tau|, h_hat, SNR_bar]",
+      "architecture": "DNN",
+      "pd_0db": 0.8204581779435269,
+      "pd_5db": 0.9950726141078838,
+      "status": "executado",
+      "source": "NN_02b"
+    },
+    {
+      "family": "tau",
+      "variant": "V7",
+      "feature_set": "[|tau|, h_hat, SNR_bar]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V7",
+      "feature_set": "[|tau|, h_hat, SNR_bar]",
+      "architecture": "KNN-5",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V7",
+      "feature_set": "[|tau|, h_hat, SNR_bar]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V8",
+      "feature_set": "[|tau|, h_hat, E]",
+      "architecture": "DNN",
+      "pd_0db": 0.8161960575386255,
+      "pd_5db": 0.9950726141078838,
+      "status": "executado",
+      "source": "NN_02b"
+    },
+    {
+      "family": "tau",
+      "variant": "V8",
+      "feature_set": "[|tau|, h_hat, E]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V8",
+      "feature_set": "[|tau|, h_hat, E]",
+      "architecture": "KNN-5",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V8",
+      "feature_set": "[|tau|, h_hat, E]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V1",
+      "feature_set": "[|tau|, h_hat, SNR_bar, E]",
+      "architecture": "DNN",
+      "pd_0db": 0.83697389451252,
+      "pd_5db": 0.9942946058091287,
+      "status": "executado",
+      "source": "NN_02b"
+    },
+    {
+      "family": "tau",
+      "variant": "V1",
+      "feature_set": "[|tau|, h_hat, SNR_bar, E]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V1",
+      "feature_set": "[|tau|, h_hat, SNR_bar, E]",
+      "architecture": "KNN-5",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "tau",
+      "variant": "V1",
+      "feature_set": "[|tau|, h_hat, SNR_bar, E]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "A",
+      "feature_set": "z_eq[1024]",
+      "architecture": "CNN-1D",
+      "pd_0db": 0.004262120404901438,
+      "pd_5db": 0.0005186721991701245,
+      "status": "executado",
+      "source": "NN_02c"
+    },
+    {
+      "family": "z_eq",
+      "variant": "A",
+      "feature_set": "z_eq[1024]",
+      "architecture": "MLP",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "A",
+      "feature_set": "z_eq[1024]",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "A",
+      "feature_set": "z_eq[1024]",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "B",
+      "feature_set": "z_eq[1024] + h",
+      "architecture": "CNN-1D",
+      "pd_0db": 0.0015982951518380393,
+      "pd_5db": 0.0005186721991701245,
+      "status": "executado",
+      "source": "NN_02c"
+    },
+    {
+      "family": "z_eq",
+      "variant": "B",
+      "feature_set": "z_eq[1024] + h",
+      "architecture": "MLP",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "B",
+      "feature_set": "z_eq[1024] + h",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "B",
+      "feature_set": "z_eq[1024] + h",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "C",
+      "feature_set": "z_eq[1024] + h + SNR",
+      "architecture": "CNN-1D",
+      "pd_0db": 0.0,
+      "pd_5db": 0.0,
+      "status": "executado",
+      "source": "NN_02c"
+    },
+    {
+      "family": "z_eq",
+      "variant": "C",
+      "feature_set": "z_eq[1024] + h + SNR",
+      "architecture": "MLP",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "C",
+      "feature_set": "z_eq[1024] + h + SNR",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "C",
+      "feature_set": "z_eq[1024] + h + SNR",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "D",
+      "feature_set": "z_eq[1024] + |tau|",
+      "architecture": "CNN-1D",
+      "pd_0db": 0.8833244539158231,
+      "pd_5db": 0.9968879668049793,
+      "status": "executado",
+      "source": "NN_02c"
+    },
+    {
+      "family": "z_eq",
+      "variant": "D",
+      "feature_set": "z_eq[1024] + |tau|",
+      "architecture": "MLP",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "D",
+      "feature_set": "z_eq[1024] + |tau|",
+      "architecture": "SVM-RBF",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    },
+    {
+      "family": "z_eq",
+      "variant": "D",
+      "feature_set": "z_eq[1024] + |tau|",
+      "architecture": "XGBoost",
+      "pd_0db": NaN,
+      "pd_5db": NaN,
+      "status": "pendente",
+      "source": "-"
+    }
+  ]
+}

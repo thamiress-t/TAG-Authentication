@@ -1,0 +1,485 @@
+%% ------------- Portuguese version ------------
+\documentclass{sbrt}
+\usepackage[english,brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\graphicspath{{figures/}}
+\usepackage[table]{xcolor}
+\newcommand{\bblue}[1]{\textcolor{blue}{#1}}
+\newcommand{\rred}[1]{\textcolor{red}{#1}}
+%% ---------------------------------------------
+
+\begin{document}
+
+\title{Autenticação em Camada Física com TAGs Caóticas: Validação do Núcleo Mínimo 2-Características e D3F em Canal Rayleigh}
+
+\author{Thamires Tavares
+\thanks{T. Tavares, Departamento de Eletrônica e Sistemas, Universidade Federal de Pernambuco, Recife-PE}%
+}
+
+\maketitle
+
+\markboth{XLIV SIMPÓSIO BRASILEIRO DE TELECOMUNICA\c{C}\~{O}ES E PROCESSAMENTO DE SINAIS - SBrT 2026, 29 DE SETEMBRO A 2 DE OUTUBRO DE 2026, SALVADOR, BA}{}
+
+%% ------------- Portuguese version ------------
+\begin{resumo}
+Este trabalho propõe um discriminador baseado em rede neural para autenticação em camada física com tags caóticas em canal Rayleigh. O método utiliza dois escalares por pacote autenticado (correlação entre tag legítima e tag legítima e fator de desvanecimento de canal), mantendo simplicidade computacional. Um estudo de ablação valida que este conjunto de características é mínimo e suficiente: qualquer informação adicional degrada o desempenho, confirmando que a rede neural captura a informação discriminatória essencial. Realiza-se validação estatística para garantir que os dados satisfazem premissas de independência e distribuição idêntica, permitindo aplicar o \textit{Data-Driven Detection Framework} (D3F) --- um método que constrói detectores ótimos a partir de dados, com garantia teórica de desempenho confiável usando menos simulações. A proposta apresenta resultados superiores a técnicas clássicas de clusterização como SVM (\textit{Support Vetor Machine)}. Resultados obtidos pelo discriminador proposto alcançam probabilidade de detecção mais de 10 vezes superior ao método clássico para SNRs abaixo de 5 dB.
+
+\end{resumo}
+
+\begin{chave}
+Autenticação na camada física, discriminador neural, Data-Driven Detection Framework, DNN, canal Rayleigh, características mínimas, TAGs caóticas, estudo de ablação.
+\end{chave}
+%% ---------------------------------------------
+
+\begin{abstract}
+This work proposes an optimal neural network-based discriminator for physical layer authentication with chaotic TAGs in Rayleigh fading channels, achieving detection probability more than 10 times superior to the classical method for signal-to-noise ratios below 5 dB. The method requires only two scalars per received packet (matched correlator and estimated channel gain), maintaining computational simplicity. An ablation study validates that this feature set is minimal and sufficient: any additional information degrades performance, confirming that the neural network captures the essential discriminatory information. We perform statistical validation to ensure that data satisfy independence and identical distribution assumptions, enabling application of the \textit{Data-Driven Detection Framework} (D3F) --- a method that constructs optimal detectors from data with theoretical guarantee of reliable performance using fewer simulations. Comparisons with linear SVM show that the gain stems from dynamic threshold adaptation by the neural network. Results establish a baseline in Rayleigh channels, with extension planned for V2X channels.
+\end{abstract}
+
+\begin{keywords}
+Physical layer authentication, neural discriminator, Data-Driven Detection Framework, DNN, Rayleigh fading channel, minimal features, chaotic TAGs, ablation study.
+\end{keywords}
+
+\section{Introdução}
+
+A autenticação de dispositivos em redes sem fio é requisito crítico de segurança, especialmente com a expansão de IoT, 5G/6G e sistemas veiculares autônomos~\cite{ref_xie}. Em comunicações V2X (\textit{Vehicle-to-Everything}), dispositivos devem ser autenticados em dezenas de milissegundos enquanto se deslocam a alta velocidade --- intervalo de tempo fundamentalmente incompatível com protocolos criptográficos convencionais que exigem múltiplas trocas de mensagens~\cite{ref_v2x_latency} \rred{conferir referencia}. Para contornar essa limitação, a autenticação em camada física (PLA, do inglês \textit{Physical Layer Authentication}) emerge como abordagem complementar~\cite{ref_poor, ref_yu} \rred{conferir yu em detalhes} que explora características intrínsecas do canal de comunicação, difíceis de reproduzir por adversários sem acesso a esse mesmo canal. Trabalhos pioneiros~\cite{ref_yu} \rred{conferir yu em detalhes}  formalizaram PLA como teste de hipótese baseado em características do canal, estabelecendo fundações teóricas para otimalidade de Neyman-Pearson em autenticação.
+
+PLA divide-se em duas estratégias: passiva, que extrai características naturais do canal (desvanecimento, informação de estado do canal) para verificar legitimidade, e ativa, que insere sequências de autenticação de baixa potência sob controle criptográfico do transmissor legítimo, garantindo que apenas receptores com a chave secreta possam detectá-las. Este trabalho foca em PLA ativa. Trabalhos anteriores em autenticação em camada física utilizaram códigos de autenticação baseados em funções hash criptográficas~\cite{ref_hash_pla, ref_ldpc_auth} \rred{conferir referencias de outras estrategias de autenticação}, explorando a resposta de frequência do canal como desafio de autenticação. Diferenciando-se dessa abordagem,~\cite{ref_joao} propuseram a geração de sequências de autenticação (TAGs) utilizando mapas caóticos unidimensionais em lugar de funções hash criptográficas, explorando as propriedades de perda de informação dos mapas da tenda para garantir o sigilo incondicional da autenticação. As TAGs caóticas combinam sigilo intrínseco com eficiência computacional e, conforme validado empiricamente, fornecem resistência natural a ataques de personificação em canais Rayleigh. Outros trabalhos 
+~\cite{ref_xie} \rred{referencia fora de ordem pra o artigo de 2021} aprofundaram a análise teórica do método, explorando particularmente o papel do ganho de canal estimado $\hat{h}$ como informação crítica para adaptação de limiar (princípio de taxa constante de falso alarme --- CFAR), mostrando seu impacto significativo em regimes de baixa razão sinal-ruído (SNR).
+
+
+Uma limitação fundamental dos detectores clássicos em PLA é que, em canais Rayleigh, o ganho variável de pacote a pacote altera significativamente a distribuição da estatística de decisão em regimes de baixo SNR, dificultando a discriminação confiável entre transmissor legítimo e invasor~\cite{ref_xie}. Redes neurais emergem como solução viável para essa limitação, pois podem aprender limiares adaptativos e relações não-lineares a partir dos dados, potencialmente superando as abordagens clássicas fixas. Embora redes neurais tenham sido exploradas em detectores para PLA, a maioria dos trabalhos utiliza arquiteturas por tentativa-e-erro sem fundamentação teórica rigorosa sobre quando e por que funcionam. Um survey recente~\cite{ref_survey_ml_pla} documenta dezenas de abordagens utilizando DNN, CNN, LSTM, RNN, Transformers, Clustering e Autoencoders, frequentemente sob diferentes tipos de canais \bblue{ talvez adicionar referencia 43 do Braca et al? la fala sobre redes neurais como black boxes}. Trabalhos posteriores~\cite{ref_wang_dnn_csi} propuseram CNN, RNN e CRNN para autenticação baseada em CSI, mostrando que CNNs extraem melhor características locais que redes densas. Uma comparação sistemática~\cite{ref_comparison_stat_ml} entre métodos estatísticos clássicos e ML mostrou que classificadores com uma classe alcançam menor taxa de falso negativo com pequena correlação espacial entre canais, enquanto métodos estatísticos são vantajosos com grande correlação. Clustering também foi aplicado a PLA via abordagem geométrica em sistemas edge computing~\cite{ref_clustering_pla}. Adicionalmente, biometric chaotic signatures e transformers para predição de CSI foram propostos para autenticação sob ataques de spoofing~\cite{ref_biometric_chaotic, ref_transformer_csi_pred}.
+
+Sob revisao: \rred{Este trabalho diferencia-se ao aplicar o Data-Driven Detection Framework (D3F)~\cite{ref_braca} como fundamentação teórica rigorosa: a escolha de entropia cruzada binária (BCE) e validação das premissas IID não são heurísticas, mas consequências diretas de Large Deviations Theory, provendo convergência garantida ao teste ótimo de Neyman-Pearson. A maioria dos trabalhos da área não investigou sistematicamente o conjunto mínimo de características necessário, geralmente engenhando múltiplas features sem validar minimalidade ou estabelecer qual informação é verdadeiramente essencial versus redundante. Este trabalho propõe: (i) aplicação rigorosa de D3F ao PLA com TAGs caóticas em canal Rayleigh; (ii) validação que o par minimal de características $[|\tau|, \hat{h}]$ satisfaz premissas IID; (iii) comparação sob igualdade de condições entre redes neurais (DNN, CNN), SVM linear e KNN (mesmas características, mesmo treinamento), permitindo isolar o ganho da adaptação de limiar dinâmico; (iv) estudo sistemático de ablação demonstra que informação adicional degrada desempenho, validando minimalidade; (v) scoping claro das conclusões a canal Rayleigh estacionário com identificação de quando redes neurais voltam a ser essenciais em cenários V2X com fading Rician, não-estacionário e correlação temporal.}
+
+\section{Fundamentação Teórica}
+
+\subsection{Modelo do Canal e Sinais}
+
+Considera-se um cenário com transmissor legítimo (Alice), receptor (Bob) e atacante (Eve) em canal com desvanecimento plano e lento de Rayleigh~\cite{ref_poor}. No $i$-ésimo intervalo de sinalização, Alice transmite $\mathbf{x}^i = \rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i$, onde $\mathbf{s}^i \in \{-1,+1\}^L$ é mensagem BPSK de $L$ símbolos e $\mathbf{t}^i$ é a tag caótica. Os parâmetros $\rho_s$ e $\rho_t$ distribuem energia entre mensagem e tag, satisfazendo $\rho_s^2 + \rho_t^2\,\mathbb{E}[(t_k^i)^2] = 1$ para manter potência transmitida unitária~\cite{ref_joao}.
+
+O sinal recebido em Bob é $\mathbf{y}^i = h^i(\rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i) + \mathbf{w}^i$, onde o ganho $h^i$ (constante dentro de um pacote, variável entre pacotes) segue distribuição Rayleigh normalizada $\mathbb{E}[(h^i)^2]=1$, e $\mathbf{w}^i \sim \mathcal{N}(\mathbf{0}, \sigma_w^2\mathbf{I})$ é ruído AWGN. Bob estima $h^i$ pelo método de mínimos quadrados utilizando os $L$ símbolos conhecidos: $\hat{h}^i = (\mathbf{s}^i)^\top \mathbf{y}^i/(L\rho_s)$. O erro de estimação possui variância $\sigma_e^2 = \sigma_w^2/(L\rho_s^2)$~\cite{ref_kay}. Em regime de SNR nominal elevado, $\sigma_e \ll 1$, justificando a aproximação de CSI perfeito utilizada neste trabalho — uma hipótese validável por simulação com CSI prático em futuro refinamento.
+
+\subsection{Geração de Tags Caóticas}
+
+A tag $\mathbf{t}^i$ é gerada iterativamente pelo mapa da tenda, com condição inicial $x_0$ derivada criptograficamente da mensagem e de uma chave secreta compartilhada entre Alice e Bob. Especificamente, $x_0 = (\oplus_\ell (s_\ell^i \land k_\ell)) \bmod 1$, onde $\oplus$ denota XOR lógico entre bits de mensagem $s_\ell^i \in \{0,1\}$ (convertidos de $\{-1,+1\}$) e chave $k_\ell \in \{0,1\}$~\cite{ref_joao}. O mapa é:
+\begin{equation}\label{eq:tentmap}
+    f(x) = \begin{cases} 2x+1, & x \in [-1,0) \\ 1-2x, & x \in [0,1] \end{cases}
+\end{equation}
+As iteradas sucessivas $t_k^i = f^{(k)}(x_0)$ formam a sequência caótica. A distribuição de equilibrium do mapa da tenda sobre $[-1,1]$ é uniforme, logo $\mathbb{E}[(t_k^i)^2] = 1/3$~\cite{ref_poor}. A alta autocorrelação e baixa correlação cruzada com diferentes condições iniciais garantem que Bob (com acesso à chave) detecte a tag de Alice, mas não a de Eve (com chave diferente), provendo resistência a ataques de personificação~\cite{ref_joao}.
+
+
+\subsection{Teste de Hipótese para Autenticação}\label{sec:hip}
+
+O problema de discriminar Alice (transmissor legítimo) de Eve (intruso) é modelado como teste de hipótese binária~\cite{ref_poor}: $H_0$ (ausência de tag legítima, Eve transmite) versus $H_1$ (tag presente, Alice transmite). A estatística de decisão é o correlator casado com a tag de referência, normalizado pelo ganho de canal estimado~\cite{ref_xie}:
+\begin{equation}\label{eq:tau}
+    \tau^i = \left(\frac{\mathbf{y}^i}{h^i} - \rho_s \mathbf{s}^i\right) \cdot \frac{\mathbf{t}^{\mathrm{ref}}}{\rho_t},
+\end{equation}
+A distribuição de $\tau^i$ em ambas hipóteses é gaussiana pelo Teorema Central do Limite (com $L \gg 1$):
+\begin{align}
+    \tau^i \mid H_0 &\sim \mathcal{N}\!\left(0,\; \sigma_{v^i}^2\right),\quad
+    \tau^i \mid H_1 \sim \mathcal{N}\!\left(\mu_{t}^i,\; \sigma_{v^i}^2\right), \label{eq:dists}
+\end{align}
+onde $\mu_t^i = \|\mathbf{t}^i\|^2$ é a energia da tag e
+\begin{equation}\label{eq:var_v}
+    \sigma_{v^i}^2 = \frac{\mathbb{E}[(\mathbf{t}^i_k)^2]}{\rho_t^2}\,\frac{\sigma_w^2}{|h^i|^2}
+\end{equation}
+que tem dependência inversa com $|h^i|^2$. Após equalização pelo ganho estimado, a estatística \eqref{eq:tau} reduz-se a um correlator casado com ruído gaussiano escalado por $h^i$.
+
+Sob a hipótese $H_0$, o limiar fixo $\tau_0$ impõe:
+\begin{equation}\label{eq:alpha_def}
+    \alpha = \Pr(\tau^i > \tau_0 \mid H_0) = \mathbb{E}_{t^2,h}\left[Q\left(\frac{\tau_0\,\rho_t\,|h|}{\sigma_w\sqrt{t^2}}\right)\right],
+\end{equation}
+onde $Q(x)=\int_x^{\infty} \frac{e^{-u^2/2}}{\sqrt{2\pi}}\,du$ é a função cola da gaussiana padrão. Com $|h|$ Rayleigh e a tag caótica estacionária, esta média pode ser avaliada em forma fechada~\cite{ref_poor}:
+\begin{equation}\label{eq:alpha_rayleigh_closed}
+    \alpha_i(t^2,\tau_0) = \frac{1}{2}\left[1 - \sqrt{\frac{A\,\Omega}{2 + A\,\Omega}}\right],
+    \qquad A = \frac{\tau_0^2\,\rho_t^2}{t^2\,\sigma_w^2}.
+\end{equation}
+A probabilidade de falso alarme média sobre o ensemble de tags é então
+\begin{equation}\label{eq:alpha_avg}
+    \alpha(\tau_0) = \mathbb{E}_{t^2}\left[\alpha_i(t^2,\tau_0)\right].
+\end{equation}
+
+Sob $H_1$, o correlator tem média $\mu_t^i = t^2$ e a mesma variância condicional de \eqref{eq:var_v}. Para um limiar fixo, a probabilidade de erro de detecção é
+\begin{equation}\label{eq:beta_def}
+    \beta = \Pr(\tau^i < \tau_0 \mid H_1) = \mathbb{E}_{t^2,h}\left[Q\left(\frac{t^2 - \tau_0}{\sigma_v}\right)\right].
+\end{equation}
+A integral sobre o ganho Rayleigh admite também expressão fechada,
+\begin{equation}\label{eq:beta_rayleigh_closed}
+    \beta_i(t^2,\tau_0) = \frac{1}{2} \left[1 + \operatorname{sign}(t^2 - \tau_0)
+    \sqrt{\frac{B\,\Omega}{2 + B\,\Omega}}\right],
+    \qquad B = \frac{(\tau_0 - t^2)^2\,\rho_t^2}{t^2\,\sigma_w^2}.
+\end{equation}
+A probabilidade média de perda de detecção é
+\begin{equation}\label{eq:beta_avg}
+    \beta(\tau_0) = \mathbb{E}_{t^2}\left[\beta_i(t^2,\tau_0)\right].
+\end{equation}
+
+Para projeto de limiar com falso positivo fixo, fixamos $\alpha(\tau_0)=\eta$ e obtemos uma solução aproximada em termos da energia média da tag $\mathbb{E}[t^2]$:
+\begin{equation}\label{eq:tau0_solution}
+    \tau_0 \approx \sqrt{\frac{k\,\mathbb{E}[t^2] \, \sigma_w^2}{\rho_t^2}},
+    \qquad k = \frac{2(1-2\eta)^2}{1 - (1-2\eta)^2}.
+\end{equation}
+Essa expressão é exata quando o desvio relativo de $t^2$ é pequeno, como ocorre para tags geradas pelo mapa da tenda com normalização de energia.
+
+No regime AWGN de referência (ou seja, assumindo $h^i=1$ constante), a mesma lógica reduz-se ao projeto clássico:
+\begin{equation}\label{eq:tau0_awgn}
+    \tau_0 = Q^{-1}(1-\alpha)\,\sigma_v,
+    \qquad \beta = Q\left(\frac{\tau_0 - \mu_t}{\sigma_v}\right),
+\end{equation}
+onde $\sigma_v^2 = \mathbb{E}[t^2]\,\sigma_w^2/\rho_t^2$ e $\mu_t = \mathbb{E}[t^2]$. A diferença essencial entre os regimes é que no canal Rayleigh fixo o limiar $\tau_0$ é escolhido para satisfazer $\alpha$ em média sobre o ganho fadiga, enquanto no AWGN o limiar é adaptado a cada valor de ruído/ganho conhecido.
+
+Esta distinção é a origem da curva de projeto apresentada nas Figuras p1--p5: em Rayleigh com limiar fixo, $\beta(\tau_0)$ cresce mais lentamente com SNR do que no caso AWGN, devido à variação de $|h|$ e ao fato de que o limiar não pode ser ajustado pacote a pacote. Essa diferença explica a presença de um piso de desempenho distinto para $\beta$ em canal fadiante, em contraste com a queda exponencial no caso AWGN.
+
+\textbf{Probabilidade de Detecção:} Define-se $P_D$ como a probabilidade de decidir corretamente por $H_1$ (aceitar Alice como autêntica) quando $H_1$ é verdadeira:
+\begin{equation}\label{eq:pd}
+P_D = 1 - \beta = \Pr(\tau^i > \tau_0 \mid H_1).
+\end{equation}
+Idealmente, deseja-se simultaneamente $P_D \approx 1$ (alta detecção) e $\alpha \ll 1$ (poucos falsos positivos). Em baixo SNR, estas são competitivas: limiar baixo aumenta $P_D$ mas piora $\alpha$. A metodologia D3F permite operar em qualquer ponto da curva $P_D(\text{SNR})$ sob restrição fixa de $\alpha = 10^{-7}$.
+
+
+\subsection{Framework D3F e Extrapolação do Limiar}
+
+\rred{trecho sob revisão}
+
+\bblue{Anotações sobre contribuições de Braca et al:
+O "Data Driven Function"  nada mais é que o mapeamento das estatisticas de H0 e H1 após algum tipo de treinamento.
+O método anteriormente comparado com o D3F é o LLR (Log-Likelihood Ratio), referencia 64 do Braca et al - Testing Statistical Hypothesis de 2005 }
+
+\bblue{ Braca et al fala sobre referencias descrevendo melhor como repartir os dados de treinamento, conjunto de caracterização e validação ( artigo de 2018) }
+
+\bblue{Log
+Moment-Generating Function (LMGF)}
+
+\rred{O artigo distingue dois tipos de deviations, um é o small deviations (conforme n tende a infinito, a media da hipótese converge para um valor fixo) e outro é o large deviations ( conforme n aumenta, a probabilidade de (T - a estatística) se afastar da media tende a zero, como numa gaussiana. Probabilidades de calda com comportamento assintótico.}
+
+\bblue{Anexo D explica formulas exponenciais de Large Deviations. E a referencia 62 de braca et al traz os teoremas básicos: A. Dembo and O. Zeitouni, Large Deviations Techniques and Applications.
+New York, NY, USA: Springer-Verlag, 1998. (É um textbook)}
+
+\rred{O D3F vai ser analisado em dois frameworks para analisar a performance de clasificação do teste D3F. O primeiro é  }
+
+
+O \textit{Data-Driven Detection Framework} (D3F)~\cite{ref_braca} constrói detectores ótimos de Neyman-Pearson a partir de dados.
+
+Ao minimizar BCE sobre amostras balanceadas de $H_0$ e $H_1$, a rede neural é incentivada a produzir saídas $\hat{\mathbf{p}} \in [0,1]$ que aproximam $\Pr(H_1|\mathbf{f})$ --- as probabilidades posteriores calibradas~\cite{ref_braca}. Braca et al. demonstram que, se as observações de entrada satisfazem independência e distribuição idêntica sob cada hipótese, então os escores aprendidos com BCE convergem em distribuição para uma gaussiana sob $H_0$, independentemente da arquitetura da rede. Isto significa que o que importa é a qualidade do treinamento (calibração), não a topologia. No contexto de autenticação com TAGs caóticas, cada amostra corresponde a um intervalo de sinalização distinto com ganho independente e ruído iid. A extrapolação do limiar usando gaussiana sob $H_0$ permite especificar qualquer restrição de falso alarme via inversão da CDF gaussiana~\cite{ref_poor}.
+
+\section{Validação das Premissas IID}
+
+Para que D3F seja aplicável, dados devem satisfazer: (1) independência, (2) distribuição idêntica sob cada hipótese, (3) formato aproximadamente gaussiano sob $H_0$.
+
+\subsection{Teste 1: Independência (Autocorrelação Lag-1)}
+
+Observações IID devem apresentar autocorrelação negligenciável em defasagens pequenas, validando que amostras sucessivas são independentes.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/fig01_iid_autocorrelation.pdf}
+\caption{Teste de independência (IID): Autocorrelação lag-1 para $|\tau|$ e $\hat{h}$ sob $H_0$ e $H_1$. Valores próximos a zero (< 0.02 em magnitude) confirmam que observações sucessivas são independentes.}
+\label{fig:iid_autocorr}
+\end{figure}
+
+\subsection{Teste 2: Distribuição Idêntica (Teste Kolmogorov-Smirnov)}
+
+Divide-se o conjunto de teste em duas metades temporais e aplica-se teste de hipótese para validar que a distribuição não apresenta drift temporal.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/fig02_iid_distribution.pdf}
+\caption{Teste de distribuição idêntica (IID): Histogramas de $|\tau|$ divididos em primeira e segunda metade do conjunto de teste. Teste KS não rejeita igualdade de distribuição ($p > 0.05$ em ambos $H_0$ e $H_1$), confirmando estabilidade temporal (sem drift).}
+\label{fig:iid_dist}
+\end{figure}
+
+\subsection{Teste 3: Gaussianidade}
+
+Valida-se que a distribuição dos escores de decisão aproxima-se de uma forma gaussiana, conforme exigido pela extrapolação paramétrica de D3F.
+
+\section{Métodos Avaliados}
+
+Comparamos cinco abordagens sob framework unificado D3F ($\alpha = 10^{-7}$)~\cite{ref_braca}:
+
+\subsection{DNN-2feat (Rede Densa)}
+
+Arquitetura: $[2] \to \text{Dense}(128) \to \text{BatchNorm} \to \text{ReLU} \to \text{Dropout}(0.2) \to \text{Dense}(64) \to \text{Dense}(32) \to [1]$ com ativação sigmoid.
+
+Justificativa dos inputs~\cite{ref_poor, ref_braca}:
+\begin{itemize}
+\item $|\tau|$: Estatística suficiente do teste ótimo Neyman-Pearson.
+\item $\hat{h}$: Estimativa MLE do ganho, permite aprender dependência CFAR do limiar com SNR instantânea.
+\end{itemize}
+
+Treinamento: entropia cruzada binária, otimizador Adam, com técnicas de regularização (early stopping, dropout).
+
+\subsection{CNN-2feat (Rede Convolucional)}
+
+Arquitetura: $[2] \to \text{Conv1D}(8, \text{kernel}=1) \to \text{BatchNorm} \to \text{GlobalAvgPool} \to \text{Dense}(16) \to [1]$.
+
+Com apenas 2 features, Conv1D com kernel=1 degenera a operação densa pura, provando irrelevância arquitetônica sob D3F.
+
+\subsection{SVM (Máquina de Vetores de Suporte)}
+
+Máquina de vetores de suporte com kernel linear~\cite{ref_poor}, servindo como referência clássica não-neural, validando se a separação entre classes é bem explicada por um hiperplano linear.
+
+\subsection{KNN (K-Vizinhos Mais Próximos)}
+
+Classificador baseado em vizinhança local em espaço euclidiano normalizado, testando se a geometria local dos dados é suficiente para capturar a discriminação entre classes.
+
+\subsection{Isolation Forest (Floresta de Isolamento)}
+
+Treinada apenas em $H_0$ (detecção de anomalias). Testa se isolamento de pontos anômalos captura suficiência de $[\tau, h]$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/fig05a_auc_comparison.pdf}
+\caption{Área sob a curva ROC (AUC) para os cinco métodos avaliados no conjunto de teste. Todos os métodos alcançam AUC $> 0.99$, indicando alta capacidade discriminatória em canal Rayleigh.}
+\label{fig:auc_comparison}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/fig05b_operating_point.pdf}
+\caption{Ponto de operação (FPR vs $P_D$ em SNR = 0 dB) sob limiar D3F com restrição $\alpha = 10^{-7}$. Resultado central: equivalência de desempenho entre redes neurais (DNN, CNN) e método clássico (SVM) valida que arquitetura é secundária em canal Rayleigh.}
+\label{fig:operating_point}
+\end{figure}
+
+\section{Dataset e Treinamento}
+
+Características normalizadas via z-score (média/variância computadas no conjunto de treinamento):
+$$\tau_{\mathrm{norm}} = \frac{\tau - \mu_\tau}{\sigma_\tau}, \quad h_{\mathrm{norm}} = \frac{h - \mu_h}{\sigma_h}$$
+
+Dataset estratificado em partições de treino, validação e teste, gerado via simulação Monte Carlo com fading Rayleigh, cobrindo múltiplas faixas de SNR~\cite{ref_joao}.
+
+\section{Resultados}
+
+\subsection{Limiar Ótimo via D3F}
+
+Usando dados de validação sob $H_0$, estimam-se os parâmetros gaussianos de cada método, permitindo extrapolação do limiar de decisão via D3F para qualquer nível de falso alarme especificado.
+
+\subsection{Performance no Conjunto de Teste}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Método} & \textbf{AUC} & \textbf{$\mu(H_0)$} & \textbf{$\sigma(H_0)$} & \textbf{Limiar} \\
+\midrule
+DNN-2feat & $0.9994$ & $0.0129$ & $0.0780$ & $0.418$ \\
+SVM & $0.9994$ & $0.0123$ & $0.0778$ & $0.417$ \\
+KNN & $0.9969$ & $0.0121$ & $0.0819$ & $0.438$ \\
+CNN-2feat & $0.9733$ & $0.1613$ & $0.2276$ & $1.344$ \\
+IForest & $0.9982$ & $0.1786$ & $0.1545$ & $0.982$ \\
+\bottomrule
+\end{tabular}
+\caption{Parâmetros D3F estimados de validação. Limiares computados sob restrição de falso alarme especificada.}
+\label{tab:d3f_params}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Método} & \textbf{AUC} & \textbf{FPR} & \textbf{Ranking} \\
+\midrule
+DNN-2feat & $0.9994$ & Baixo & 1 \\
+SVM & $0.9994$ & Baixo & 2 \\
+KNN & $0.9969$ & Muito Baixo & 3 \\
+IForest & $0.9982$ & Muito Baixo & 4 \\
+CNN-2feat & $0.9733$ & Muito Baixo & 5 \\
+\bottomrule
+\end{tabular}
+\caption{Desempenho no conjunto de teste sob limiar D3F. DNN-2feat e SVM alcançam AUC equivalente em canal Rayleigh estacionário --- demonstrando que redes neurais não são necessárias quando comparadas a métodos de clustering clássicos sob IID. Em cenários V2X com fading Rician e não-estacionaridade, redes neurais recuperam vantagem crítica.}
+\label{tab:performance}
+\end{table}
+
+\subsection{Análise de $P_D$ vs SNR}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{figures/fig04_pd_vs_snr.pdf}
+\caption{Probabilidade de detecção em função da razão sinal-ruído para os cinco métodos sob regime D3F. Os métodos baseados em características mínimas (DNN-2feat, SVM, KNN) apresentam desempenho superior e convergente. Métodos baseados em sinal bruto (CNN) e detecção de anomalias (IForest) degradam. Resultado central: em canal Rayleigh, redes neurais não oferecem vantagem teórica sobre otimização clássica.}
+\label{fig:pd_snr_main}
+\end{figure}
+
+\section{Interpretação: Suficiência de $[\tau, h]$ em Rayleigh}
+
+A equivalência entre métodos neurais e não-neurais valida três pontos centrais:
+
+\subsection{Arquitetura é Irrelevante Sob D3F}
+
+A rede convolucional, com duas features e sem estrutura temporal, degenera para uma operação densa pura. Sua degradação em relação aos métodos densos demonstra que a qualidade da calibração dos escores (não a topologia) é o fator determinante. Arquitetura afeta a capacidade de calibração, não a capacidade de decisão teórica em dados IID.
+
+\subsection{Redes Neurais Não São Necessárias em Rayleigh}
+
+DNN e SVM linear alcançam ótimalidade Neyman-Pearson idêntica. SVM, ao maximizar margem geométrica, implicitamente aprende a fronteira linear ótima em espaço de features fisicamente motivados. DNN, ao minimizar BCE sob dados IID, converge ao mesmo LRT ótimo. Ambos convergem porque $|\tau|$ é estatística suficiente e o problema é essencialmente linear em $\mathbb{R}^2$.
+
+\subsection{Suficiência Validada Empiricamente}
+
+Características adicionais (SNR estimado, energia) não melhoram desempenho de DNN-2feat. O par mínimo $[\tau, h]$ captura integralmente a informação discriminatória em canal Rayleigh.
+
+\section{Scoping: Limitação a Canal Rayleigh e Perspectivas para V2X}
+
+A conclusão "redes neurais não são necessárias" é \textbf{válida apenas para canais Rayleigh} --- cenário matemático bem-behaved, simétrico, com estatística estacionária e gaussiana. Em aplicações reais, especialmente comunicações veiculares autônomas, as premissas são violadas.
+
+\subsection{Diferenças Entre Rayleigh e V2X}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Aspecto} & \textbf{Rayleigh} & \textbf{V2X Veicular} \\
+\midrule
+Fading & Rayleigh (sem LOS) & Rician (com/sem LOS) \\
+Mobilidade & Moderada & Rápida (100+ km/h) \\
+Stationaridade & Estacionária & Não-estacionária \\
+Doppler & Mínimo & Shifts significativos \\
+Blockage & Simétrico & Outros veículos, edifícios \\
+Multipath & Simétrico & Assimétrico, rápido \\
+Correlação temporal & Nenhuma & Significativa \\
+Gaussianidade & Garantida & Violada \\
+\bottomrule
+\end{tabular}
+\caption{Comparação entre Rayleigh (cenário desta pesquisa) e V2X (cenário de aplicação veicular).}
+\label{tab:rayleigh_vs_v2x}
+\end{table}
+
+Em V2X:
+\begin{enumerate}
+\item \textbf{Fading Rician}: Presença de LOS violaria gaussianidade simples.
+\item \textbf{Não-estacionaridade}: Com mobilidade a 100+ km/h, estatística muda a cada pacote, violando premissa IID.
+\item \textbf{Correlação temporal}: Ganho $h^i$ não é independente; LSTM poderia explorar correlação.
+\item \textbf{Decisões CFAR adaptativas}: Velocidade modula Doppler; redes poderiam aprender dependência não-linear.
+\end{enumerate}
+
+\subsection{Por Que Redes Neurais Importariam em V2X}
+
+\begin{enumerate}
+\item \textbf{Decisões não-lineares}: Rician + blockage criam separabilidade não-linear.
+\item \textbf{Dinâmica temporal}: LSTM capturaria correlações entre pacotes.
+\item \textbf{Adaptação a condições}: CNN temporal aprenderia regras que variam com velocidade.
+\item \textbf{Robuustez a não-estacionaridade}: Redes podem ser retreinadas incrementalmente.
+\end{enumerate}
+
+\section{Conclusões}
+
+Este trabalho estabelece um \textbf{baseline teórico em condições ideais} (Rayleigh estacionário):
+
+\begin{enumerate}
+\item O conjunto \textbf{minimal $[\tau, h]$} é necessário e suficiente sob Rayleigh, eliminando engenharia de características.
+\item Premissas IID são \textbf{satisfeitas} (validadas por testes estatísticos múltiplos).
+\item \textbf{Métodos neurais e não-neurais alcançam ótimalidade Neyman-Pearson equivalente} sob aplicação rigorosa de D3F.
+\item \textbf{Arquitetura é irrelevante} em Rayleigh quando dados são IID e treinamento usa entropia cruzada binária.
+\item Limiares D3F são \textbf{viáveis e confiáveis} sob restrições especificadas de falso alarme.
+\end{enumerate}
+
+\textbf{Conclusão honesta para aplicações futuras}: Esta conclusão de "redes neurais desnecessárias" é \textbf{específica a canais Rayleigh estacionários}. Em comunicações V2X para veículos autônomos, onde fading é Rician, dinâmica é não-estacionária e correlação temporal é significativa, redes neurais recuperam papel crítico. A metodologia D3F fornece fundação sólida, mas a resposta "qual arquitetura usar" depende fundamentalmente do canal --- simples em Rayleigh, complexa em V2X.
+
+\textbf{Recomendação}: Este trabalho motiva investigação futura em V2X, onde D3F pode ser estendido para:
+\begin{enumerate}
+\item Modelos Rician com parâmetro K variável.
+\item Canais não-estacionários com retreat dinâmica de limiar.
+\item Redes recorrentes (LSTM) para explorar correlação temporal.
+\item Comparação justa: DNN vs LSTM vs CNN1D em V2X, análogo a este estudo em Rayleigh.
+\end{enumerate}
+
+A metodologia D3F oferece via rigorosa para design de detectores baseados em aprendizado de máquina, com garantias de ótimalidade sob IID. Sua aplicação a cenários vehiculares reais permanece questão em aberto de importância crítica para segurança de sistemas autônomos.
+
+\section*{Agradecimentos}
+Os autores agradecem ao Departamento de Eletrônica e Sistemas da Universidade Federal de Pernambuco pelo apoio na realização deste trabalho.
+
+\section*{Lista de Siglas}
+{\small
+\begin{tabular}{@{}p{1.9cm}p{5.9cm}@{}}
+\textbf{AWGN}      & \textit{Additive White Gaussian Noise} \\
+\textbf{BCE}       & \textit{Binary Cross-Entropy} (Entropia Cruzada Binária) \\
+\textbf{BPSK}      & \textit{Binary Phase Shift Keying} \\
+\textbf{CFAR}      & \textit{Constant False Alarm Rate} (Taxa Constante de Falso Positivo) \\
+\textbf{CNN}       & \textit{Convolutional Neural Network} \\
+\textbf{CSI}       & \textit{Channel State Information} \\
+\textbf{D3F}       & \textit{Data-Driven Detection Framework} \\
+\textbf{DNN}       & \textit{Deep Neural Network} \\
+\textbf{KNN}       & \textit{K-Nearest Neighbors} \\
+\textbf{LOS}       & \textit{Line-of-Sight} \\
+\textbf{MLE}       & \textit{Maximum Likelihood Estimation} \\
+$\boldsymbol{P_D}$ & Probabilidade de Detecção \\
+\textbf{PLA}       & \textit{Physical Layer Authentication} \\
+\textbf{SNR}       & \textit{Signal-to-Noise Ratio} \\
+\textbf{SVM}       & \textit{Support Vector Machine} \\
+\textbf{TAG}       & Sequência de Autenticação \\
+\textbf{V2X}       & \textit{Vehicle-to-Everything} \\
+\end{tabular}
+}
+
+\begin{thebibliography}{99}
+
+\bibitem{ref_xie}
+H. Xie, W. Chen, e J. Ning, ``Security Model of Authentication at the Physical Layer and Performance Analysis over Fading Channels,'' \textit{IEEE Trans.\ Inf.\ Forensics Security}, v.~16, pp.~3945--3959, 2021.
+
+\bibitem{ref_v2x_latency}
+3GPP, ``3GPP TS 22.186: Enhancement of 3GPP Support for Reliable Low-Latency Communications,'' Technical Specification, v.~17.1.0, 3rd Generation Partnership Project, 2022.
+
+\bibitem{ref_poor}
+H. V. Poor, \textit{An Introduction to Signal Detection and Estimation}, 2.~ed. Springer-Verlag, 1994.
+
+\bibitem{ref_yu}
+P. L. Yu, J. S. Baras, e B. M. Sadler, ``Physical-Layer Authentication,'' \textit{IEEE Trans.\ Inf.\ Forensics Security}, v.~3, n.~1, pp.~38--51, 2008.
+
+\bibitem{ref_hash_pla}
+``A Physical-Layer Authentication Scheme Based on Hash Method,'' \textit{Journal of Electronics \& Information Technology}, v.~38, n.~5, pp.~1032--1039, 2016.
+
+\bibitem{ref_ldpc_auth}
+``An LDPC Code Based Physical Layer Message Authentication Scheme with Perfect Security,'' \textit{IEEE Communications Letters}, v.~22, n.~5, pp.~954--957, 2018.
+
+\bibitem{ref_joao}
+J. V. C. Evangelista, D. Moreno, D. P. B. Chaves e C. Pimentel, ``Tag Generation Using Chaotic Sequences for Physical-Layer Authentication,'' \textit{IEEE Access}, v.~11, pp.~73080--73087, 2023.
+
+\bibitem{ref_braca}
+P. Braca, S. Marano, V. Matta, e P. Willett, ``Statistical Hypothesis Testing Based on Machine Learning: Large Deviations Analysis,'' \textit{IEEE Open J.\ Signal Process.}, v.~3, pp.~464--484, 2022.
+
+\bibitem{ref_kay}
+S. M. Kay, \textit{Fundamentals of Statistical Signal Processing, Vol.~I: Estimation Theory}. Prentice Hall, 1993.
+
+\bibitem{ref_raya}
+M. Raya e J.-P. Hubaux, ``Securing Vehicular Ad Hoc Networks,'' \textit{J. Comput. Secur.}, v.~15, n.~1, pp.~39--68, 2007.
+
+\bibitem{ref_3gpp}
+3GPP, ``Study on Channel Model for Frequencies from 0.5 to 100 GHz,'' Technical Report TR 38.901, v.~17.0.0, 3rd Generation Partnership Project, 2022.
+
+\bibitem{ref_adam}
+D. P. Kingma e J. Ba, ``Adam: A Method for Stochastic Optimization,'' em \textit{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, San Diego, CA, EUA, 2015.
+
+\bibitem{ref_goodfellow}
+I. Goodfellow, Y. Bengio e A. Courville, \textit{Deep Learning}. MIT Press, 2016.
+
+\bibitem{ref_proakis}
+J. G. Proakis e D. G. Manolakis, \textit{Digital Signal Processing: Principles, Algorithms, and Applications}, 4.~ed. Pearson Prentice Hall, 2007.
+
+\bibitem{ref_survey_ml_pla}
+``A Survey of Machine Learning-based Physical-Layer Authentication in Wireless Communications,'' arXiv:2411.09906, 2024.
+
+\bibitem{ref_wang_dnn_csi}
+Q. Wang, H. Li, Z. Chen, D. Zhao, S. Ye, e J. Cai, ``Supervised and Semi-Supervised Deep Neural Networks for CSI-Based Authentication,'' arXiv:1807.09469, 2018.
+
+\bibitem{ref_comparison_stat_ml}
+``Comparison of Statistical and Machine Learning Techniques for Physical Layer Authentication,'' arXiv:2001.06238, 2020.
+
+\bibitem{ref_clustering_pla}
+``Clustering Based Physical-Layer Authentication in Edge Computing Systems with Asymmetric Resources,'' \textit{Sensors}, v.~19, n.~8, 2020.
+
+\bibitem{ref_siamese_synthetic}
+``Practical Physical Layer Authentication for Mobile Scenarios Using a Synthetic Dataset Enhanced Deep Learning Approach,'' arXiv:2508.20861, 2024.
+
+\bibitem{ref_transformer_csi_pred}
+``Channel Prediction-Based Physical Layer Authentication under Consecutive Spoofing Attacks,'' arXiv:2603.19962, 2026.
+
+\bibitem{ref_model_driven_learning}
+``Model-Driven Learning-Based Physical Layer Authentication for Mobile Wi-Fi Devices,'' arXiv:2603.19972, 2026.
+
+\bibitem{ref_biometric_chaotic}
+``Physical Layer Authenticated Image Encryption for IoT Network Based on Biometric Chaotic Signature for MPFrFT OFDM System,'' \textit{Sensors}, v.~23, n.~18, p.~7843, 2023.
+
+\end{thebibliography}
+
+\end{document}

@@ -4,15 +4,17 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\newtheorem{theorem}{Teorema}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\graphicspath{{figures/}}
 %% ---------------------------------------------
 
 \begin{document}
 
-\title{Autenticação na Camada Física com TAGs Caóticas via Redes Neurais Profundas em Canais com Desvanecimento Rayleigh}
+\title{Autenticação na Camada Física com Tags Caóticas via Discriminador Neural D3F: Ablação das Entradas e Núcleo Mínimo em Canal Rayleigh}
 
-\author{Thamires Tavares e Co-autor Sobrenome
-\thanks{T. Tavares, Departamento de Eletrônica e Sistemas, Universidade Federal de Pernambuco, Recife-PE, e-mail: thamires.tavares@ufpe.br. Este trabalho foi parcialmente financiado por XXXXXXX (XX/XXXXX-X).}%
+\author{Thamires Tavares, Daniel Chaves e Cecílio Pimentel
+\thanks{T. Tavares, D.~P.~B. Chaves e C.~J.~L. Pimentel, Departamento de Eletrônica e Sistemas, Universidade Federal de Pernambuco, Recife-PE, e-mails: \{thamires.tavares, daniel.chaves, cecilio\}@ufpe.br. Este trabalho foi parcialmente financiado por XXXXXXX (XX/XXXXX-X).}%
 }
 
 \maketitle
@@ -22,212 +24,234 @@
 
 %% ------------- Portuguese version ------------
 \begin{resumo}
-Este trabalho propõe uma abordagem baseada em redes neurais profundas (DNN) para autenticação na camada física (PLA) em canais Rayleigh, utilizando sequências de autenticação (TAGs) geradas por mapas caóticos. O problema é formulado como teste de hipótese binária sob restrição de probabilidade de falso alarme $\alpha < 10^{-7}$, alinhado ao critério de Neyman-Pearson. A DNN aprende a fronteira de decisão ótima a partir de quatro estatísticas do sinal recebido, superando o correlador clássico em regimes de baixo SNR, conforme validado por simulações Monte Carlo.
+Este trabalho propõe a aplicação de um discriminador por rede neural ao problema de autenticação na camada física com sequências de autenticação (tags) caóticas em canais Rayleigh. Investigamos três representações de entrada para o discriminador: (i) um vetor de quatro características fisicamente motivadas, (ii) uma CNN 1D sobre o sinal recebido equalizado após extração da tag legítima ($\mathbf{z}_{eq}$) e (iii) a DNN sobre $\mathbf{z}_{eq}$. Demonstramos que abordagens baseadas em $\mathbf{z}_{eq}$ falham em baixo SNR por não realizarem integração coerente sem acesso explícito à tag de referência. Um estudo de ablação sistemático revela o resultado central: apenas dois escalares por pacote — o correlador casado $|\tau|$ e a energia recebida $E$ — são necessários e suficientes para superar o correlador clássico, atingindo $P_D = 87{,}2\%$ a 0~dB contra $8{,}1\%$ do método analítico.
 \end{resumo}
 \begin{chave}
-Autenticação na camada física, redes neurais profundas, canal Rayleigh, teste de hipótese, sequências caóticas.
+Autenticação na camada física, discriminador neural, D3F, CNN 1D, canal Rayleigh, ablação de características, sequências caóticas.
 \end{chave}
 %% ---------------------------------------------
 
 
 \begin{abstract}
-This work proposes a deep neural network (DNN) approach for physical layer authentication (PLA) over Rayleigh fading channels using chaotic tag sequences (TAGs). The problem is formulated as a binary hypothesis test under a false alarm probability constraint $\alpha < 10^{-7}$, aligned with the Neyman-Pearson criterion. The DNN learns the optimal decision boundary from four statistics of the received signal, outperforming the classical correlator at low SNR, as validated by Monte Carlo simulations.
+This paper proposes the application of a neural network discriminator to the problem of physical layer authentication with chaotic authentication sequences (tags) over Rayleigh fading channels. We investigate three input representations for the discriminator: (i) a four-feature physically motivated vector, (ii) a 1D CNN over the equalized received signal after legitimate tag extraction ($\mathbf{z}_{eq}$), and (iii) a DNN over $\mathbf{z}_{eq}$. We show that $\mathbf{z}_{eq}$-based approaches fail at low SNR because coherent integration cannot be performed without explicit access to the reference tag. A systematic ablation study yields the central result: only two scalars per packet — the matched correlator output $|\tau|$ and received energy $E$ — are necessary and sufficient to outperform the classical correlator, achieving $P_D = 87{,}2\%$ at 0~dB versus $8{,}1\%$ for the analytical method.
 \end{abstract}
 \begin{keywords}
-Physical layer authentication, deep neural networks, Rayleigh channel, hypothesis testing, chaotic sequences.
+Physical layer authentication, neural discriminator, D3F, 1D CNN, Rayleigh channel, feature ablation, chaotic sequences.
 \end{keywords}
-
 
 \section{Introdução}
 
-A segurança em redes sem fio tornou-se um dos principais desafios da comunicação moderna, especialmente com a proliferação de dispositivos de baixo custo e baixa potência em sistemas IoT e 5G/6G. Mecanismos criptográficos tradicionais, operando nas camadas superiores da pilha de protocolos, impõem sobrecarga computacional incompatível com esses dispositivos. Nesse contexto, a autenticação na camada física (PLA --- \textit{Physical Layer Authentication}) emerge como complemento eficaz, explorando características intrínsecas do canal de comunicação que são difíceis de falsificar~\cite{ref_xie}.
+A autenticação de dispositivos em redes sem fio é um requisito de segurança cada vez mais crítico, especialmente com a expansão de sistemas IoT e 5G/6G~\cite{ref_xie}. Em cenários veiculares (\textit{Vehicle-to-Everything}, V2X)~\cite{ref_3gpp,ref_raya}, por exemplo, dispositivos precisam ser autenticados em dezenas de milissegundos enquanto se deslocam a alta velocidade — janela de tempo incompatível com protocolos de troca de chaves convencionais, que exigem múltiplas rodadas de troca de mensagens entre as partes. Abordagens criptográficas tradicionais, implementadas nas camadas superiores da pilha de protocolos, pressupõem capacidade computacional e infraestrutura de gerenciamento de chaves incompatíveis com dispositivos de recursos limitados e com a escala de redes heterogêneas emergentes. A autenticação na camada física (\textit{Physical Layer Authentication}, PLA) surge como solução complementar, explorando características intrínsecas do sinal transmitido — difíceis de reproduzir por adversários sem acesso ao canal legítimo — sem exigir complexidade adicional no receptor.
 
-Uma abordagem promissora para PLA consiste na inserção de sequências de autenticação (TAGs) de baixa potência, embutidas na mensagem transmitida e conhecidas exclusivamente pelo receptor legítimo~\cite{ref_joao}. O receptor autentica a origem pela correlação do sinal recebido com a TAG de referência, formulando um teste de hipótese binária. Em canais com desvanecimento Rayleigh, a análise estatística desse teste é não trivial: as distribuições do correlador sob hipótese autêntica e fraudulenta se sobrepõem significativamente em regimes de baixo SNR, limitando a probabilidade de detecção do método clássico.
+Dentre as estratégias de PLA, a inserção de sequências de autenticação (tags) caóticas de baixa potência no sinal transmitido destaca-se por combinar sigilo e eficiência~\cite{ref_joao}. Geradas a partir de uma chave secreta compartilhada entre transmissor e receptor, as tags são detectáveis apenas pelo receptor legítimo por meio de correlação com a sequência de referência. O problema de autenticação é então formulado como um teste de hipótese binária entre a presença e a ausência da tag no sinal recebido. Em canais com desvanecimento Rayleigh, no entanto, essa formulação torna-se particularmente desafiadora em baixo SNR: o ganho de canal variável altera de pacote a pacote a distribuição do correlador, dificultando a manutenção simultânea de alta probabilidade de detecção e restrição estrita de falso alarme, como $\alpha = 10^{-7}$, sem um volume proibitivo de amostras de Monte Carlo.
 
-Trabalhos recentes demonstraram que classificadores baseados em aprendizado de máquina podem aprender o teste de razão de verossimilhança (LRT) ótimo de Neyman-Pearson diretamente dos dados, mantendo robustez a imperfeições do modelo~\cite{ref_braca}. Este trabalho propõe uma DNN para PLA com TAGs caóticas em canal Rayleigh. As principais contribuições são: (i) formulação do problema com restrição estrita $\alpha = 10^{-7}$ sobre a FPR; (ii) justificativa teórica da arquitetura via teoria de grandes desvios~\cite{ref_braca}; (iii) metodologia de geração de dados com amostragem estratificada e aumento sintético para cobertura de 0 a 30~dB; e (iv) comparação com o método clássico de~\cite{ref_xie} sob a mesma restrição operacional.
+Um avanço central para contornar esse obstáculo é o \textit{Data-Driven Detection Framework} (D3F)~\cite{ref_braca}, que extrapola parametricamente o limiar de decisão para probabilidades de falso alarme inacessíveis por simulação direta. Fundamentado na teoria de grandes desvios, esse arcabouço demonstra que (i) a estatística D3F treinada por entropia cruzada binária (BCE, do inglês \textit{Binary Cross-Entropy}) converge em distribuição para uma gaussiana sob $H_0$, validando a extrapolação paramétrica do limiar; e (ii) os escores D3F convergem ao detector ótimo de Neyman-Pearson~\cite{ref_poor} — permitindo que qualquer arquitetura treinada com BCE sirva como estatística de teste. A aplicação desse arcabouço ao contexto de PLA com tags caóticas é inédita na literatura e levanta uma questão prática fundamental: qual representação de entrada é mais adequada para o discriminador neural — o sinal residual bruto $\mathbf{z}_{eq}$ (como na correlação clássica), um vetor de características fisicamente motivadas, ou o sinal bruto processado por uma CNN 1D~\cite{ref_liao,ref_oshea}?
+
+Este trabalho responde a essa questão em três etapas, com as seguintes contribuições: (i)~\textbf{primeira aplicação de discriminador neural D3F} ao problema de PLA com tags caóticas em canal Rayleigh~\cite{ref_joao}, propondo o vetor $\mathbf{f} = [|\tau^i|, \hat{h}, \widehat{\text{SNR}}, E]$ justificado pela teoria de detecção — $|\tau^i|$ como estatística suficiente de Neyman-Pearson~\cite{ref_poor} e $\hat{h}, E$ como estimativas instantâneas do canal análogas ao CFAR; (ii)~\textbf{investigação comparativa} das três representações de entrada — $\mathbf{f}$, CNN 1D sobre $\mathbf{z}_{eq}$, e DNN sobre $\mathbf{z}_{eq}$ —, demonstrando que abordagens baseadas em $\mathbf{z}_{eq}$ falham em baixo SNR por não realizarem integração coerente sem acesso à tag de referência; e (iii)~\textbf{estudo de ablação} que identifica o par mínimo $[|\tau|, E]$ como representação suficiente, atingindo $P_D = 87{,}2\%$ a 0~dB — resultado contraintuitivo que supera a própria linha de base de quatro características ($82{,}3\%$) por concentrar a capacidade representacional nos dois escalares mais informativos.
 
 
 \section{Fundamentação Teórica}
 
-\subsection{Modelo do Sistema}
+\subsection{Modelo do Canal e Sinais}
 
-Considera-se um sistema com um transmissor legítimo (Alice), um receptor (Bob) e um atacante (Eve). Alice transmite uma mensagem BPSK $\mathbf{m} \in \{+1,-1\}^L$, com $L \in [512, 1024]$ símbolos, concatenada com uma TAG caótica secreta $\mathbf{t} \in \mathbb{R}^L$. O sinal recebido por Bob é modelado por~\cite{ref_joao}:
-\begin{equation}\label{eq:rx}
-    \mathbf{y} = h\!\left(\rho_s \mathbf{m} + \rho_t \mathbf{t}\right) + \mathbf{w},
-\end{equation}
-onde $h \sim \text{Rayleigh}(1/\sqrt{2})$ é o coeficiente do canal com desvanecimento plano, $\rho_s = \sqrt{0{,}985}$ e $\rho_t = 0{,}124$ são as amplitudes normalizadas da mensagem e da TAG, e $\mathbf{w} \sim \mathcal{N}(\mathbf{0}, \sigma_w^2\mathbf{I})$ é o ruído AWGN.
+Considera-se um cenário com transmissor legítimo (Alice), receptor (Bob) e atacante (Eve) em canal com desvanecimento plano e lento de Rayleigh~\cite{ref_joao}: o ganho $h^i$ é constante ao longo de um pacote de $L$ símbolos e varia independentemente entre pacotes, com $\mathbb{E}[(h^i)^2] = 1$ e ruído AWGN $\mathbf{w}^i \sim \mathcal{N}(\mathbf{0}, \sigma_w^2\mathbf{I})$. A SNR instantânea $\gamma^i = (h^i)^2/\sigma_w^2$ segue distribuição exponencial com média $\bar{\gamma} = 1/\sigma_w^2$, e Bob conhece o estado do canal (\textit{Channel State Information}, CSI). Alice transmite $\mathbf{x}^i = \rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i$, onde $\mathbf{s}^i \in \{-1,+1\}^L$ é a mensagem BPSK ($L = 1024$) e $\mathbf{t}^i$ é a tag caótica, com $\rho_s^2 + \rho_t^2\,\mathbb{E}[(t_k^i)^2] = 1$ garantindo potência constante. Neste trabalho, $\rho_s \approx 0{,}992$ e $\rho_t \approx 0{,}212$, de modo que o impacto da tag na recuperação da mensagem é mínimo. O sinal recebido por Bob é $\mathbf{y}^i = h^i(\rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i) + \mathbf{w}^i$.
 
-O problema de autenticação é formulado como teste de hipótese binária:
-\begin{equation}\label{eq:hip}
-    \begin{cases}
-        H_1{:}\ \mathbf{y} = h(\rho_s \mathbf{m} + \rho_t \mathbf{t}) + \mathbf{w} & \!\text{(autêntico)} \\[2pt]
-        H_0{:}\ \mathbf{y} = h_e(\rho_s \mathbf{m}_e + \rho_t \mathbf{t}_e) + \mathbf{w} & \!\text{(fraudulento)}
-    \end{cases}
-\end{equation}
-onde $h_e$, $\mathbf{m}_e$ e $\mathbf{t}_e$ são o canal, a mensagem e a TAG de Eve, todos independentes dos legítimos. Bob conhece $\mathbf{t}$, mas não tem acesso a $\mathbf{t}_e$.
+Bob estima $h^i$ pelo estimador de mínimos quadrados~\cite{ref_kay} usando os $L$ símbolos piloto da mensagem: $\hat{h}^i = (\mathbf{s}^i)^\top \mathbf{y}^i / (L \rho_s)$, cujo erro de estimação tem variância $\sigma_e^2 = \sigma_w^2 / (L \rho_s^2)$. A $\overline{\text{SNR}} = 0$~dB e $L = 1024$, obtém-se $\sigma_e^2 \approx 10^{-3}$ — erro desprezível frente ao ganho médio unitário $\mathbb{E}[(h^i)^2] = 1$. Portanto, a hipótese de CSI perfeito adotada neste trabalho é uma aproximação válida, e os resultados da 4-feat DNN não seriam alterados de forma significativa por estimativas práticas de canal.
 
-\subsection{Geração de TAGs Caóticas}
+\subsection{Geração de Tags Caóticas}
 
-A TAG é gerada pela iteração do mapa tenda perturbado~\cite{ref_joao}:
+A tag $\mathbf{t}^i$ é gerada pelo mapa tenda perturbado~\cite{ref_joao}, com condição inicial $x_0 = (\sum_\ell s^i_\ell \oplus k_\ell) \bmod 1$ derivada da mensagem e de uma chave secreta $\mathbf{k} \in \{0,1\}^L$:
 \begin{equation}\label{eq:tentmap}
-    x_{n+1} = 1 - 2\left|x_n - \tfrac{1}{2}\right| - \beta,\quad \beta = 10^{-6},
+    x_{n+1} = 1 - 2\left|x_n - \tfrac{1}{2}\right| - \beta,\quad \beta = 10^{-6}.
 \end{equation}
-com semente $x_0 = \bigl(\sum_i m_i \oplus k_i\bigr) \!\bmod 1$, sendo $\mathbf{k} \in \{0,1\}^L$ uma chave compartilhada entre Alice e Bob. A perturbação $\beta$ garante comportamento caótico robusto. A TAG resultante é normalizada de forma que $\mathbb{E}[\mathbf{t}^2] \approx 1/3$. A sensibilidade às condições iniciais do mapa tenda assegura que a TAG de Eve, gerada com chave distinta, seja estatisticamente independente de $\mathbf{t}$, inviabilizando a replicação sem conhecimento de $\mathbf{k}$.
+A alta autocorrelação e baixa correlação cruzada de sequências caóticas com condições iniciais distintas garantem que Bob detecte a tag de Alice mas não a de Eve — gerada com chave diferente —, provendo resistência natural a ataques de personificação~\cite{ref_joao}.
 
-\subsection{Teste Clássico e Critério de Neyman-Pearson}
+\subsection{Teste de Hipótese para Autenticação}\label{sec:hip}
 
-Após equalização do canal, Bob calcula o correlador casado~\cite{ref_xie,ref_joao}:
-\begin{equation}\label{eq:corr}
-    \tau = \left|\sum_{n=1}^{L} \!\left(\frac{y_n}{h} - \rho_s m_n\!\right)\!\frac{t_n^{\text{ref}}}{\rho_t}\right|,
+O problema é modelado como teste de hipótese binária, com $H_0$ indicando ausência de tag (intruso) e $H_1$ indicando presença de tag (autêntico). A estatística de decisão é o correlador casado com a tag de referência~\cite{ref_joao}:
+\begin{equation}\label{eq:tau}
+    \tau^i = \left(\frac{\mathbf{y}^i}{h^i} - \rho_s \mathbf{s}^i\right) \cdot \frac{\mathbf{t}^{\mathrm{ref}}}{\rho_t},
 \end{equation}
-onde $\mathbf{t}^{\text{ref}}$ é a TAG de referência. Sob $H_1$, $\mathbb{E}[\tau] \propto \rho_t L$; sob $H_0$, $\mathbb{E}[\tau] \approx 0$ pois $\mathbf{t}_e$ e $\mathbf{t}^{\text{ref}}$ são descorrelacionadas.
+cuja distribuição condicional, pelo Teorema Central do Limite com $L = 1024$, é gaussiana em ambas as hipóteses:
+\begin{align}
+    \tau^i \mid H_0 &\sim \mathcal{N}\!\left(0,\; \sigma_{v^i}^2\right),\quad
+    \tau^i \mid H_1 \sim \mathcal{N}\!\left(|\mathbf{t}^i|^2,\; \sigma_{v^i}^2\right), \label{eq:dists}
+\end{align}
+onde $\sigma_{v^i}^2 = L\,\mathbb{E}[(t^i_k)^2]/(\rho_t^2\,\gamma^i)$ depende da SNR instantânea. A regra de decisão $\tau^i \underset{H_0}{\overset{H_1}{\gtrless}} \tau^i_0$ impõe a restrição $\alpha = Q(\tau^i_0/\sigma_{v^i})$, resultando em $\tau^i_0 = \sigma_{v^i}\,Q^{-1}(\alpha)$.
 
-Pelo lema de Neyman-Pearson, a regra ótima é $\tau \underset{H_0}{\overset{H_1}{\gtrless}} \tau_0$, com $\tau_0$ tal que~\cite{ref_poor}:
-\begin{equation}\label{eq:np}
-    \Pr\!\left\{\tau > \tau_0 \mid H_0\right\} = \alpha.
+\subsection{Framework D3F e Extrapolação do Limiar}\label{sec:d3f}
+
+Verificar diretamente $\alpha = 10^{-7}$ por Monte Carlo exigiria mais de $10^8$ amostras $H_0$ por bin de SNR — computacionalmente inviável. O framework D3F~\cite{ref_braca} contorna esse problema ajustando uma gaussiana $\mathcal{N}(\hat{\mu}_{H_0}, \hat{\sigma}_{H_0}^2)$ à distribuição dos escores sob $H_0$ a partir de $\sim\!10^3$--$10^4$ amostras e extrapolando o limiar impondo $\Pr(s > \tau^* \mid H_0) = \alpha$. Invertendo a CDF gaussiana padrão, obtém-se:
+\begin{equation}\label{eq:d3f}
+    \tau^*(\alpha) = \hat{\mu}_{H_0} + \Phi^{-1}(1-\alpha)\,\hat{\sigma}_{H_0},
 \end{equation}
-Para canal Rayleigh com AWGN, a probabilidade de detecção do método clássico satisfaz~\cite{ref_xie}:
-\begin{equation}\label{eq:pd_class}
-    P_D^{\text{cl}} \approx \frac{1}{2}\,\text{erfc}\!\left(\frac{\text{erfc}^{-1}(2\alpha) - \sqrt{\rho_t^2 L \cdot \overline{\text{SNR}}}}{\sqrt{1 + \rho_t^2\,\overline{\text{SNR}}}}\right)\!,
-\end{equation}
-onde $\overline{\text{SNR}} = \rho_s^2/\sigma_w^2$ é a SNR média. O ganho de processamento $\rho_t^2 L$ indica que $P_D$ cresce com o comprimento da TAG, porém de forma sub-ótima em canais Rayleigh devido à não-gaussianidade das distribuições em baixo SNR.
+onde $\Phi^{-1}(1 - 10^{-7}) \approx 5{,}20$, situando o limiar a mais de 5 desvios padrões acima da média de $H_0$ — região inacessível por Monte Carlo direto. Os dois resultados centrais adotados de~\cite{ref_braca} são: (i) a estatística D3F treinada com BCE converge em distribuição para uma gaussiana sob $H_0$ — resultado que valida diretamente a extrapolação via~\eqref{eq:d3f} —; e (ii) os escores D3F convergem ao LRT de Neyman-Pearson~\cite{ref_poor,ref_veldhuis} com o crescimento do conjunto de treino. Cabe ressaltar que~\cite{ref_braca} trata observações escalares IID sem engenharia de características; a aplicação do D3F ao cenário de PLA com tags caóticas em canal Rayleigh, com o vetor $\mathbf{f}$ fisicamente motivado, constitui contribuição original deste trabalho. A probabilidade de detecção é estimada como a fração de amostras $H_1$ com escore acima de $\tau^*$.
+
+A hipótese de gaussianidade sob $H_0$ é satisfeita analiticamente para $\tau^i$~\eqref{eq:dists} e empiricamente para a 4-feat DNN bem calibrada. Para a 1D CNN em baixo SNR (AUC $= 0{,}898$), os escores se sobrepõem e $\hat{\sigma}_{H_0}$ torna-se instável, superestimando $\tau^*$.
 
 
-\section{Rede Neural Profunda para Autenticação}
+\section{Métodos Avaliados}
 
-\subsection{Fundamento Teórico: Grandes Desvios e Neyman-Pearson}
+Investigamos o discriminador D3F em três representações de entrada, em ordem crescente de abstração: (i) vetor de características $\mathbf{f}$ fisicamente motivado (Seção~\ref{sec:dnn4feat}), avaliando também a topologia Dense sobre $\mathbf{z}_{eq}$ como ablação de representação; (ii) CNN 1D sobre o sinal bruto (Seção~\ref{sec:cnn1d}), que testa se o filtro casado pode ser aprendido implicitamente; e (iii) a mesma CNN com entrada $\mathbf{f}$ para isolar o efeito da arquitetura (Seção~\ref{sec:cnn4feat}). Um SVM linear serve de referência não-neural sobre $\mathbf{f}$ (Seção~\ref{sec:svm}).
 
-Braca et al.~\cite{ref_braca} demonstram, via teoria de grandes desvios, que um classificador ML treinado em dados suficientes converge para a estatística de teste ótima de Neyman-Pearson. A taxa de erro satisfaz assintoticamente:
-\begin{equation}\label{eq:ld}
-    \Pr(\text{erro}) \lesssim \exp\!\left(-L \cdot I_{\text{eff}}\right),
-\end{equation}
-onde $I_{\text{eff}} = D_{\text{KL}}\bigl(P(\mathbf{f}|H_1)\,\|\,P(\mathbf{f}|H_0)\bigr)$ é a divergência de Kullback-Leibler entre as distribuições do vetor de características $\mathbf{f}$ sob cada hipótese. A fusão de múltiplas estatísticas aumenta $I_{\text{eff}}$ em relação ao correlador isolado, acelerando o decaimento exponencial do erro com $L$. Este resultado fundamenta o uso de um vetor de características multidimensional como entrada da DNN.
+\subsection{DNN com Quatro Características (4-feat DNN)}\label{sec:dnn4feat}
 
-\subsection{Vetor de Características}
+A DNN de quatro características, proposta neste trabalho como primeira aplicação do D3F~\cite{ref_braca} ao cenário de PLA com tags caóticas em canal Rayleigh, recebe como entrada $\mathbf{f} = [|\tau^i|,\, \hat{h},\, \widehat{\text{SNR}},\, E]$, onde $|\tau^i|$ é o módulo do correlador casado~\eqref{eq:tau}, $\hat{h}$ e $\widehat{\text{SNR}}$ são estimativas do ganho e da SNR instantânea obtidas pela estimação piloto com os $L = 1024$ símbolos de mensagem, e $E = \|\mathbf{y}\|^2/L$ é a energia média do sinal recebido. Cada componente é justificada pela teoria de detecção:
 
-A DNN recebe como entrada o vetor $\mathbf{f} = [\tau,\, \hat{h},\, \widehat{\text{SNR}},\, E]$, onde:
+\begin{itemize}
+  \item \textbf{$|\tau^i|$}: é a estatística suficiente do teste de Neyman-Pearson ótimo para o modelo Gaussiano de~\eqref{eq:dists}~\cite{ref_poor}. Equivale ao filtro casado com a tag~\cite{ref_proakis}, que maximiza o SNR de saída e concentra toda a informação discriminatória em um único escalar antes de qualquer aprendizado.
+  \item \textbf{$\hat{h}$ e $\widehat{\text{SNR}}$}: o limiar analítico $\tau_0^i = \sigma_{v^i}\,Q^{-1}(\alpha) \propto 1/\sqrt{\gamma^i}$ varia de pacote a pacote com $h^i$. Fornecer estimativas de $h$ e SNR como entradas permite à DNN aprender implicitamente essa dependência — comportamento análogo ao detector CFAR (\textit{Constant False Alarm Rate})~\cite{ref_poor}, que escala o limiar pela estimativa do ruído para manter $\alpha$ constante.
+  \item \textbf{$E$}: é proporcional à potência recebida e serve como proxy para a energia total disponível — estatística suficiente para detecção por energia em ausência de fase~\cite{ref_poor}. Sob $H_0$, $E \approx \sigma_w^2$; sob $H_1$, $E$ cresce com $\rho_t^2(h^i)^2 \|\mathbf{t}^i\|^2 / L$, provendo informação complementar ortogonal a $|\tau^i|$.
+\end{itemize}
 
-\textbf{(i)} $\tau$: correlador casado \eqref{eq:corr} --- estatística ótima de Neyman-Pearson para AWGN;
-
-\textbf{(ii)} $\hat{h} = \mathbb{E}[|\mathbf{y}|]$: estimativa da magnitude do canal --- captura assimetrias entre transmissões autênticas ($h$ independente de $\mathbf{t}$) e fraudulentas ($h_e$ não correlacionado com $\mathbf{t}^{\text{ref}}$);
-
-\textbf{(iii)} $\widehat{\text{SNR}} = 10\log_{10}(P_s/P_n)$ [dB]: SNR local estimada --- provê à rede o contexto de qualidade instantânea do canal, permitindo ajuste adaptativo da sensibilidade;
-
-\textbf{(iv)} $E = \mathbb{E}[|\mathbf{y}|^2]$: energia do sinal recebido --- estatística robusta a picos de ruído, complementar ao correlador.
-
-Todas as características são padronizadas individualmente (média zero, variância unitária) antes de alimentar a rede.
-
-\subsection{Arquitetura e Justificativas de Design}
-
-A topologia segue o modelo de~\cite{ref_braca} para aprendizado do LRT com estatísticas engenheiradas:
+Ao fornecer $|\tau^i|$ explicitamente como entrada, em vez de observações brutas, a 4-feat DNN adota uma abordagem de aprendizado orientado a modelos~\cite{ref_shlezinger}, diferenciando-se dos exemplos de~\cite{ref_braca} que processam observações escalares IID. A topologia adotada é:
 \begin{equation}\label{eq:arch}
-\underbrace{[4]}_{\text{entrada}}\!\to\!\underbrace{\text{Dense}(256)\!\to\!\text{Dense}(128)\!\to\!\text{Dense}(64)}_{\text{camadas ocultas}}\!\to\!\underbrace{[1]}_{\sigma(\cdot)}.
+\underbrace{[4]}_{\text{entrada}}\!\to\!\underbrace{\text{D}(256)\!\to\!\text{D}(128)\!\to\!\text{D}(64)}_{\text{ocultas}}\!\to\!\underbrace{[1]}_{\sigma(\cdot)},
 \end{equation}
+onde cada camada D$(n)$ inclui \textit{Batch Normalization}, ReLU e \textit{Dropout} ($p = 0{,}3$). O modelo tem ${\approx}\,44{.}000$ parâmetros treináveis. A topologia decrescente $256\!\to\!128\!\to\!64$ realiza compressão progressiva — análoga à cascata de estágios em um receptor coerente ótimo — sendo três camadas suficientes para aproximar qualquer fronteira contínua em $\mathbb{R}^4$~\cite{ref_goodfellow}. O \textit{Batch Normalization} normaliza as ativações de cada camada de forma análoga ao controle automático de ganho (AGC) em receptores de RF, estabilizando o treinamento independentemente da escala das entradas~\cite{ref_goodfellow}; o \textit{Dropout} previne sobreajuste. A convergência é atingida em $\approx\!40$ épocas, com AUC $= 0{,}9998$.
 
-Cada camada oculta é seguida por ativação ReLU, normalização de lote (\textit{BatchNormalization}) e \textit{Dropout}. A expansão inicial de $4 \to 256$ dimensões permite à rede representar interações não-lineares entre as quatro estatísticas de entrada. A redução gradual $256 \to 128 \to 64$ concentra progressivamente a informação discriminativa. \textit{BatchNormalization} estabiliza as distribuições de ativação ao longo do treinamento, permitindo taxa de aprendizado maior e convergência mais rápida. \textit{Dropout} com probabilidades $p \in \{0{,}3;\,0{,}3;\,0{,}2\}$ previne co-adaptação entre neurônios. A camada de saída com ativação sigmoide produz $\hat{P}(H_1|\mathbf{f}) \in (0,1)$, interpretável como probabilidade posterior de autenticidade. O modelo totaliza ${\approx}\,44{.}000$ parâmetros treináveis.
+Para verificar se o ganho provém das características ou da arquitetura, treinamos também a \textbf{DNN-1024}: mesma topologia Dense$(256\!\to\!128\!\to\!64)$, mas recebendo $\mathbf{z}_{eq} \in \mathbb{R}^{1024}$ como entrada. Sem $|\tau|$ explícito, a DNN-1024 precisaria aprender o filtro casado implicitamente — o que, como mostraremos, é inviável abaixo de 15~dB.
 
-\textbf{Determinação do limiar sob restrição $\alpha$:} A regra de decisão $\hat{P}(H_1|\mathbf{f}) \underset{H_0}{\overset{H_1}{\gtrless}} \gamma^*$ utiliza o limiar:
-\begin{equation}\label{eq:threshold}
-    \gamma^* = \operatorname*{arg\,max}_{\gamma}\; P_D(\gamma)\quad \text{s.t.}\quad \text{FPR}(\gamma) \leq \alpha,
+\subsection{1D CNN com Sinal Bruto}\label{sec:cnn1d}
+
+A 1D CNN~\cite{ref_liao,ref_oshea} processa diretamente o sinal residual $\mathbf{z}_{eq} \in \mathbb{R}^{1024}$. A motivação é análoga à de um banco de filtros adaptativos: uma camada Conv1D com $c$ filtros de tamanho $k$ equivale a um banco de $c$ filtros FIR de ordem $k$ com coeficientes aprendíveis~\cite{ref_proakis}, diferindo dos filtros clássicos (Wiener, mínimos quadrados) apenas por otimizar esses coeficientes por retropropagação:
+\begin{equation}\label{eq:cnn}
+\underbrace{[1024,1]}_{\mathbf{z}_{eq}}\!\to\!\text{Conv}_{32}^{15}\!\to\!\text{Conv}_{64}^{9}\!\to\!\text{Conv}_{128}^{5}\!\to\!\text{GAP}\!\to\!\text{D}(64)\!\to\![1],
 \end{equation}
-determinado via varredura da curva ROC no conjunto de validação, garantindo operação equivalente ao método clássico em termos de controle de falso alarme.
+onde $\text{Conv}_{c}^{k}$ denota convolução 1D ($c$ filtros, kernel $k$) seguida de BN, ReLU e MaxPooling(4). Camadas convolucionais sucessivas combinam esses filtros para detectar padrões temporais de complexidade crescente; o GAP comprime o resultado em um vetor de 128 dimensões — comportamento análogo a um detector de energia integrado ao longo de $L$ amostras. O modelo tem ${\approx}\,69{.}000$ parâmetros e AUC $= 0{,}898$. A Figura~\ref{fig:arch_cnn} ilustra o fluxo.
 
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_arch_cnn}
+  \caption{\label{fig:arch_cnn}Arquitetura da 1D CNN~\cite{ref_liao}. Entrada: sinal residual $\mathbf{z}_{eq}$ (1024 amostras). Cada bloco Conv aplica $c$ filtros FIR aprendíveis de tamanho $k$, seguidos de BN, ReLU e MaxPool(4). O GAP comprime a resposta temporal em 128 valores; a camada densa produz o escore D3F. A limitação fundamental é que, sem acesso à tag de referência $\mathbf{t}^{\rm ref}$, a rede precisa aprender o filtro casado implicitamente — tarefa inviável em baixo SNR.}
+\end{figure}
 
-\section{Geração de Dados e Treinamento}
+\subsection{CNN com Quatro Características (CNN-4feat)}\label{sec:cnn4feat}
 
-\subsection{Simulação Monte Carlo e Composição do Conjunto}
-
-Cada amostra é gerada por simulação do cenário completo:
-
-\textbf{Hipótese $H_1$:} Alice gera $\mathbf{m}$ (BPSK aleatório), $\mathbf{k}$ (chave aleatória), $\mathbf{t}$ (mapa tenda com semente derivada de $\mathbf{m} \oplus \mathbf{k}$) e $h$ (Rayleigh). O receptor correla com a TAG legítima, obtendo $\tau$ elevado.
-
-\textbf{Hipótese $H_0$:} Eve gera $\mathbf{m}_e$, $\mathbf{k}_e$, $\mathbf{t}_e$ e $h_e$, todos independentes. O receptor correla com $\mathbf{t}^{\text{ref}}$ legítima, obtendo $\tau \approx 0$ pois $\mathbf{t}_e \perp \mathbf{t}^{\text{ref}}$.
-
-\subsection{Amostragem Estratificada e Aumento Sintético}
-
-Para cobrir a faixa de SNR de 0 a 30~dB alinhada com~\cite{ref_xie}, adota-se amostragem estratificada em seis bins de 5~dB cada. Os bins de 0--10~dB, onde as distribuições de $\tau$ sob $H_0$ e $H_1$ se sobrepõem mais, recebem fator de sobreamostragem de $1{,}5\times$, garantindo que o modelo aprenda representações discriminativas justamente na região mais crítica.
-
-Adicionalmente, aplica-se aumento de dados sintético: amostras com $\text{SNR} > 15$~dB são degradadas para SNR-alvo $\in [0, 8]$~dB segundo:
-\begin{equation}\label{eq:aug}
-    \tau_{\text{novo}} = \tau_{\text{orig}} / \delta,\quad E_{\text{novo}} = E_{\text{orig}}\cdot(1 + \delta^2 - 1),
+A CNN-4feat aplica Conv1D sobre o mesmo vetor $\mathbf{f} = [|\tau^i|, \hat{h}, \widehat{\text{SNR}}, E]$ da 4-feat DNN:
+\begin{equation}\label{eq:cnn4feat}
+[4,1]\!\to\!\text{Conv}_{16}^{2}\!\to\!\text{Conv}_{32}^{2}\!\to\!\text{GAP}(32)\!\to\!\text{D}(16)\!\to\![1],
 \end{equation}
-onde $\delta = 10^{(\text{SNR}_{\text{orig}} - \text{SNR}_{\text{alvo}})/20}$. Este procedimento preserva os rótulos verdadeiros e cria amostras fisicamente coerentes para o regime crítico de baixo SNR. O conjunto resultante contém aproximadamente $375{.}000$ amostras balanceadas (50\% por classe), particionadas em 80\% treino, 10\% validação e 10\% teste, com estratificação por classe e SNR.
+com ${\approx}1{.}000$ parâmetros treináveis e AUC $= 0{,}9998$. Ao manter as mesmas entradas e variar apenas a arquitetura, qualquer diferença de desempenho entre CNN-4feat e 4-feat DNN pode ser atribuída exclusivamente à topologia — não às características. Resultados equivalentes entre ambas confirmarão que a informação discriminatória reside nas quatro características, independente da arquitetura que as processa.
 
-\subsection{Configuração e Estratégias de Treinamento}
+\subsection{SVM Linear (referência não-neural)}\label{sec:svm}
 
-O treinamento utiliza o otimizador Adam~\cite{ref_adam} com $\eta_0 = 10^{-3}$, lotes de 256 amostras e entropia cruzada binária ponderada:
-\begin{equation}\label{eq:loss}
-    \mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N}\!\left[y_i\log\hat{y}_i + (1\!-\!y_i)\log(1\!-\!\hat{y}_i)\right].
-\end{equation}
-A ponderação de classes compensa qualquer desequilíbrio residual após a estratificação. Dois \textit{callbacks} regulam o processo: (a) \textit{EarlyStopping} com paciência de 15 épocas monitora a perda de validação e restaura os pesos do melhor ponto, prevenindo memorização; (b) \textit{ReduceLROnPlateau} reduz $\eta$ por fator~0{,}5 após 5 épocas sem melhoria ($\eta_{\min} = 10^{-6}$), refinando a solução próximo à convergência. O treinamento converge tipicamente em 50--60 épocas de um total de 100.
+Além das arquiteturas neurais, avaliamos um SVM linear (perda \textit{hinge}, $\lambda = 10^{-4}$, 200 épocas) sobre $\mathbf{f}$, que maximiza a margem geométrica entre as classes — tornando a fronteira de decisão mais robusta a variações nas estimativas de canal, analogamente a um detector projetado para máxima imunidade a erros de modelagem. Com $|\tau|$ como estatística suficiente analítica, a fronteira é aproximadamente linear em $\mathbb{R}^4$, tornando o kernel linear adequado.
+
+\subsection{Protocolo de Treinamento}
+
+Todos os classificadores neurais são treinados por minimização da entropia cruzada binária (BCE) com o otimizador Adam~\cite{ref_adam} ($\eta_0 = 10^{-3}$, mini-lotes de 512 amostras), \textit{EarlyStopping} (paciência 20 épocas), \textit{ReduceLROnPlateau} (fator 0,5, paciência 10 épocas) e \textit{Dropout} ($p = 0{,}2$ em camadas convolucionais). A BCE incentiva escores calibrados, propriedade essencial para que a distribuição sob $H_0$ seja aproximadamente gaussiana e a extrapolação D3F via~\eqref{eq:d3f} seja válida.
+
+
+\section{Geração de Dados e Protocolo de Avaliação}
+
+Cada amostra é gerada por simulação completa do cenário com $L = 1024$, $\rho_s = 0{,}992$ e $\rho_t = 0{,}212$. O conjunto de dados contém 350.000 amostras balanceadas (50\% $H_1$, 50\% $H_0$), com SNR uniformemente distribuída em sete bins de 5~dB entre 0 e 30~dB, divididas em treino (280.000), validação (35.000) e teste (35.000). Todos os métodos são avaliados sobre as mesmas partições, diferindo apenas na representação de entrada: a 1D CNN e a DNN-1024 recebem $\mathbf{z}_{eq} \in \mathbb{R}^{1024}$, enquanto a 4-feat DNN, a CNN-4feat, o SVM linear e o correlador operam sobre $\mathbf{f}$. Essa uniformidade permite atribuir diferenças de desempenho à capacidade discriminatória de cada método. Os dois grupos diferem fundamentalmente no acesso à informação de modelo: os métodos baseados em $\mathbf{f}$ recebem $|\tau|$ explicitamente — a estatística suficiente analítica do teste de Neyman-Pearson — enquanto a 1D CNN e a DNN-1024 precisam aprender implicitamente o filtro casado, tarefa que se revela inviável em baixo SNR.
 
 
 \section{Resultados e Discussão}
 
-A Figura~\ref{fig:pd_snr} apresenta as curvas de $P_D$ versus SNR para o método clássico~\cite{ref_xie} e a DNN proposta, ambos operando sob a mesma restrição $\alpha = 10^{-7}$, com $L = 1024$ e modulação BPSK em canal Rayleigh. A Tabela~\ref{tab:resultados} resume valores representativos.
+A Figura~\ref{fig:pd_snr} apresenta as curvas de $P_D$ versus SNR sob $\alpha = 10^{-7}$ (via D3F) para todos os métodos avaliados, e a Tabela~\ref{tab:resultados} resume os valores em pontos representativos. Os resultados seguem a hierarquia das representações de entrada: métodos com $|\tau|$ explícito dominam em toda a faixa; métodos baseados em $\mathbf{z}_{eq}$ falham abaixo de 15~dB; e o estudo de ablação revela o par mínimo suficiente.
 
 \begin{figure}[htb]
-\begin{center}
-\setlength{\unitlength}{0.0105in}%
-\begin{picture}(242,156)(73,660)
-\put( 75,660){\framebox(240,150){}}
-\put(105,675){\line(0,1){12}}
-\put(165,675){\line(0,1){12}}
-\put(225,675){\line(0,1){12}}
-\put(285,675){\line(0,1){12}}
-\put(75,675){\line(0,1){12}}
-\put(105,660){\makebox(0,0)[t]{\small 5}}
-\put(165,660){\makebox(0,0)[t]{\small 10}}
-\put(225,660){\makebox(0,0)[t]{\small 15}}
-\put(285,660){\makebox(0,0)[t]{\small 20}}
-\put(75,660){\makebox(0,0)[t]{\small 0}}
-\put(75,675){\line(1,0){5}}\put(75,735){\line(1,0){5}}\put(75,795){\line(1,0){5}}
-\put(70,675){\makebox(0,0)[r]{\small 0}}
-\put(70,735){\makebox(0,0)[r]{\small 0.5}}
-\put(70,795){\makebox(0,0)[r]{\small 1.0}}
-\put(195,648){\makebox(0,0){SNR (dB)}}
-\put(62,735){\makebox(0,0){\rotatebox{90}{$P_D$}}}
-\put(75,679){\line(3,1){30}} \put(105,689){\line(3,2){60}} \put(165,729){\line(2,3){40}} \put(205,789){\line(2,1){42}}
-\put(75,679){\line(1,0){2}}\put(105,689){\circle*{4}}\put(165,729){\circle*{4}}\put(205,789){\circle*{4}}\put(247,809){\circle*{4}}
-\put(75,679){\line(3,2){30}} \put(105,699){\line(3,3){60}} \put(165,759){\line(1,2){20}} \put(185,799){\line(3,1){62}}
-\put(75,679){\line(0,0){0}}\put(105,699){\circle{4}}\put(165,759){\circle{4}}\put(185,799){\circle{4}}\put(247,820){\circle{4}}
-\put(155,700){\makebox(0,0)[l]{\small $\circ$ DNN (proposto)}}
-\put(155,690){\makebox(0,0)[l]{\small $\bullet$ Clássico \cite{ref_xie}}}
-\end{picture}
-\end{center}
-\caption{\label{fig:pd_snr}$P_D$ vs.\ SNR sob $\alpha = 10^{-7}$, $L = 1024$, canal Rayleigh (BPSK). A DNN supera o método clássico em SNR $\leq 10$~dB.}
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_pd_snr}
+  \caption{\label{fig:pd_snr}Probabilidade de detecção $P_D$ em função da SNR (D3F, $\alpha = 10^{-7}$, $L=1024$, canal Rayleigh). \textit{Linhas sólidas}: métodos que recebem o correlador $|\tau|$ como característica — todos ultrapassam $P_D=0{,}8$ mesmo a 0~dB. \textit{Linha tracejada}: 1D CNN sobre o sinal bruto $\mathbf{z}_{eq}$ — falha completamente abaixo de 15~dB, ilustrando que a integração coerente não é replicável por aprendizado de representação sem acesso explícito à tag de referência. A 4-feat DNN e a CNN-4feat se sobrepõem, confirmando que o desempenho é determinado pelas características de entrada, não pela arquitetura.}
 \end{figure}
 
 \begin{table}[htb]
-\caption{\label{tab:resultados}Probabilidade de detecção $P_D$ (\%) sob $\alpha = 10^{-7}$, $L=1024$.}
+\caption{\label{tab:resultados}$P_D$ (\%) sob $\alpha = 10^{-7}$ (D3F), $L=1024$, canal Rayleigh. DNN-1024: mesma topologia da 4-feat DNN, mas com entrada $\mathbf{z}_{eq}$ plano (ablação de representação). CNN-4feat: Conv1D sobre as mesmas 4 características (ablação de arquitetura).}
 \begin{center}
-\begin{tabular}{|c||c|c|}\hline
-SNR (dB) & Clássico~\cite{ref_xie} & DNN (proposto) \\\hline\hline
-5  & $\approx$12 & $\approx$27 \\\hline
-10 & $\approx$54 & $\approx$69 \\\hline
-15 & $\approx$91 & $\approx$94 \\\hline
-20 & $\approx$100 & $\approx$100 \\\hline
+\begin{tabular}{lrrrrrr}\toprule
+Método & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB & 25~dB \\\midrule
+Clássico~\cite{ref_xie}          &  8{,}1 & 58{,}7 & 99{,}9 & 100{,}0 & 100{,}0 & 100{,}0 \\
+\textbf{4-feat DNN}               & \textbf{84{,}2} & \textbf{99{,}4} & \textbf{100{,}0} & \textbf{100{,}0} & \textbf{100{,}0} & \textbf{100{,}0} \\
+CNN-4feat                         & 87{,}1 & 99{,}5 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+SVM linear (4-feat)               & 30{,}5 & 82{,}1 & 99{,}7 & 100{,}0 & 100{,}0 & 100{,}0 \\
+1D CNN ($\mathbf{z}_{eq}$)~\cite{ref_liao} &  0{,}0 &  0{,}0 &  0{,}0 &  89{,}6 & 100{,}0 & 100{,}0 \\
+DNN-1024 ($\mathbf{z}_{eq}$ plano) &  0{,}0 &  0{,}0 &  0{,}0 &   0{,}0 &   0{,}0 &  99{,}8 \\\bottomrule
 \end{tabular}
 \end{center}
 \end{table}
 
-Em SNR elevado (acima de 15~dB), ambas as abordagens convergem a $P_D \approx 1$, pois a separação entre as distribuições de $\tau$ sob $H_0$ e $H_1$ é suficientemente ampla. Na faixa crítica de 5 a 10~dB, a DNN apresenta ganho de 8 a 15 pontos percentuais em $P_D$. Este ganho é atribuível a três fatores:
+A 4-feat DNN é o método mais robusto em toda a faixa avaliada, atingindo $P_D = 84{,}2\%$ a 0~dB — mais de dez vezes superior ao correlador clássico nessa condição — e $P_D \geq 99{,}4\%$ a partir de 5~dB. Quando a DNN é bem calibrada, a distribuição dos escores sob $H_0$ é aproximadamente gaussiana em cada bin de SNR, permitindo a extrapolação via~\eqref{eq:d3f}. O correlador clássico~\cite{ref_xie} é eficaz a partir de 10~dB ($P_D \approx 99{,}9\%$), mas sua desvantagem em baixo SNR decorre da necessidade de estimar $\sigma_{v^i}$ com precisão em condições de desvanecimento severo, tarefa que a DNN contorna ao aprender limiares adaptativos por bin de SNR a partir dos dados.
 
-\textbf{(i) Fusão de estatísticas:} o correlador isolado sofre com a não-gaussianidade das distribuições sob canal Rayleigh em baixo SNR. A rede explora o espaço conjunto $[\tau, \hat{h}, \widehat{\text{SNR}}, E]$, aumentando $I_{\text{eff}}$ e, consequentemente, a taxa de decaimento do erro conforme~\eqref{eq:ld}.
+A CNN-4feat, com a mesma entrada $\mathbf{f}$ da 4-feat DNN mas arquitetura convolucional, atinge $P_D = 87{,}1\%$ a 0~dB — ligeiramente superior à 4-feat DNN ($84{,}2\%$) — e $P_D \geq 99{,}5\%$ a partir de 5~dB. Esse resultado confirma que o desempenho em baixo SNR é determinado pelas características de entrada, não pela escolha entre camadas densas e convolucionais: qualquer arquitetura treinada com $\mathbf{f}$ replica o comportamento da 4-feat DNN.
 
-\textbf{(ii) Aprendizado adaptativo:} a característica $\widehat{\text{SNR}}$ na entrada permite que a rede ajuste implicitamente sua sensibilidade ao regime de operação, comportamento não disponível ao limiar fixo $\tau_0$ do método clássico.
+As abordagens baseadas em $\mathbf{z}_{eq}$ — 1D CNN e DNN-1024 — revelam uma limitação estrutural comum: sem $|\tau|$ explícito, qualquer arquitetura treinada sobre $\mathbf{z}_{eq}$ precisaria aprender o filtro casado implicitamente. Isso é inviável em baixo SNR: com $\rho_t \approx 0{,}212$, a TAG tem energia $\rho_t^2 \approx 4{,}5\%$ da potência total, encoberta pelo ruído antes de qualquer integração coerente. A 1D CNN falha abaixo de 15~dB ($P_D \approx 0$), recuperando desempenho apenas quando o SNR é alto o suficiente para que observações individuais sejam discriminatórias ($P_D = 89{,}6\%$ a 15~dB). A DNN-1024 — mesma topologia densa da 4-feat DNN, mas com $\mathbf{z}_{eq} \in \mathbb{R}^{1024}$ como entrada — é ainda mais restrita: AUC $= 0{,}718$ e $P_D \approx 0$ até 20~dB, tornando-se eficaz apenas a 25~dB ($P_D = 99{,}8\%$). O SVM linear com $\mathbf{f}$, apesar de sua fronteira linear, supera ambas as arquiteturas baseadas em $\mathbf{z}_{eq}$ em toda a faixa avaliada — evidência de que a representação de entrada domina sobre a expressividade do classificador.
 
-\textbf{(iii) Robustez a incertezas de modelo:} a DNN não pressupõe gaussianidade das estatísticas de teste, adaptando-se empiricamente às distribuições reais impostas pelo canal Rayleigh durante o treinamento.
+Os resultados estabelecem uma hierarquia determinada pela representação: métodos com $|\tau|$ explícito dominam em toda a faixa de SNR, independentemente da arquitetura; métodos baseados em $\mathbf{z}_{eq}$ são ineficazes abaixo de 15~dB por razão estrutural, não por limitação de capacidade.
 
-A estratégia de amostragem estratificada com sobreamostragem 1,5$\times$ nas faixas de 0--10~dB e o aumento sintético mostraram-se essenciais: modelos treinados sem estas estratégias apresentaram degradação de 10 a 20 pontos percentuais em $P_D$ para SNR $< 8$~dB, com evidente sobreajuste à faixa de SNR dominante no conjunto de treinamento.
+\subsection{Ablação das Características de Entrada: Descoberta do Núcleo Mínimo}
+
+Para isolar a contribuição individual de cada característica auxiliar do vetor $\mathbf{f}$, treinamos oito variantes da 4-feat DNN mantendo arquitetura e hiperparâmetros inalterados, variando apenas a composição da entrada (Tabela~\ref{tab:feat_ablation}, Figura~\ref{fig:ablation_pd_snr}).
+
+\begin{table}[htb]
+\caption{\label{tab:feat_ablation}Ablação de características — $P_D$ (\%) sob $\alpha = 10^{-7}$. Todas as variantes usam a mesma topologia Dense$(256\!\to\!128\!\to\!64)$.}
+\begin{center}
+{\footnotesize
+\begin{tabular}{lrrrrr}\toprule
+Variante & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB \\\midrule
+Clássico: $|\tau|$ (limiar analítico)            &  8{,}1 & 58{,}7 & 99{,}9 & 100 & 100 \\\midrule
+V1: $[|\tau|,\hat{h},\overline{\text{SNR}},E]$   & 82{,}3 & 99{,}5 & 100 & 100 & 100 \\
+V2: $h$ perfeito                                 & 83{,}6 & 99{,}5 & 100 & 100 & 100 \\
+V3: sem $\overline{\text{SNR}}$                  & 82{,}0 & 99{,}5 & 100 & 100 & 100 \\
+V4: sem $E$                                      & 82{,}2 & 99{,}5 & 100 & 100 & 100 \\
+V5: $[|\tau|]$ isolado                           &  0{,}0 & 98{,}9 & 100 & 100 & 100 \\\midrule
+V6: $[|\tau|,\hat{h}]$                           & 85{,}6 & 99{,}6 & 100 & 100 & 100 \\
+V7: $[|\tau|,\overline{\text{SNR}}]$             & 33{,}0 & 99{,}1 & 100 & 100 & 100 \\
+\textbf{V8}: $\boldsymbol{[|\tau|,E]}$           & \textbf{87{,}2} & \textbf{99{,}5} & 100 & 100 & 100 \\\bottomrule
+\end{tabular}
+}
+\end{center}
+\end{table}
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_ablation_pd_snr}
+  \caption{\label{fig:ablation_pd_snr}$P_D$ vs.\ SNR para as variantes de ablação de características (D3F, $\alpha=10^{-7}$). O contraste central: V7 ($|\tau|$ + SNR nominal) atinge apenas $33\%$ a 0~dB, enquanto V8 ($|\tau|$ + energia instantânea) chega a $87{,}2\%$ — superando inclusive a linha de base de quatro características (V1, $82{,}3\%$). A seta indica a diferença de $54$~pp atribuível exclusivamente à substituição da SNR nominal pela energia instantânea por pacote.}
+\end{figure}
+
+\textbf{Fato~1 — CSI perfeito confirma-se dispensável.} Substituir $\hat{h}$ pela estimativa perfeita $h$ (V2) altera $P_D$ em apenas $+1{,}3$~pp a 0~dB. Com $L = 1024$ símbolos piloto, o estimador de mínimos quadrados já produz erro de estimação $\sigma_e^2 \approx 10^{-3}$~\cite{ref_kay}, tornando a hipótese de CSI perfeito adotada no modelo analítico compatível com a prática.
+
+\textbf{Fato~2 — As características auxiliares são coletivamente necessárias, mas individualmente redundantes.} Remover qualquer uma delas (V3, V4) impacta $P_D$ em no máximo $-0{,}3$~pp. Remover todas (V5) produz $P_D = 0$ a 0~dB. A DNN com apenas $|\tau|$ não dispõe de nenhuma entrada que sinalize o nível instantâneo de ruído, tornando impossível aprender limiares adaptativos por condição de canal — o mesmo problema que impede o correlador clássico~\cite{ref_xie} de atingir $P_D > 50\%$ a 0~dB.
+
+\textbf{Fato~3 — Duas características são suficientes, e a informação instantânea é determinante.} As variantes V6~$[|\tau|, \hat{h}]$ e V8~$[|\tau|, E]$ superam o correlador clássico com apenas 2 escalares por pacote, atingindo $P_D \geq 85\%$ a 0~dB. V8 atinge $87{,}2\%$ — \emph{superior à linha de base de quatro características} (V1, $82{,}3\%$) —, evidenciando que a capacidade representacional concentrada em dois graus de liberdade informativos supera a de uma rede com quatro entradas parcialmente redundantes. Em contraste, V7~$[|\tau|, \overline{\text{SNR}}]$ atinge apenas $33{,}0\%$, apesar de também usar 2 características. A diferença é estrutural: $\hat{h}$ e $E$ são calculados \emph{por pacote} a partir do sinal recebido — refletindo o ganho de canal instantâneo $h^i$ daquela transmissão —, ao passo que $\overline{\text{SNR}}$ é o rótulo médio do bin de treinamento, insensível às flutuações de $h^i$ dentro do bin. Sob desvanecimento Rayleigh severo, a variância intra-bin de $h^i$ é da mesma ordem que a variância inter-bin; portanto, a SNR nominal retém muito menos informação sobre $\sigma_{v^i}^2 \propto 1/(h^i)^2$ do que qualquer estimativa instantânea. Esse resultado fornece uma justificativa experimental para o princípio teórico do detector CFAR~\cite{ref_poor}: o limiar deve adaptar-se ao \emph{nível de ruído da amostra corrente}, não à média do regime operacional.
+
+O número mínimo de características para superar o correlador clássico é, portanto, \textbf{dois}: $|\tau|$ (estatística suficiente do teste NP) mais uma única estimativa instantânea do canal ($\hat{h}$ ou $E$), ambas computáveis com custo $\mathcal{O}(L)$ a partir do sinal recebido.
 
 
 \section{Conclusões}
 
-Este trabalho apresentou uma DNN para autenticação na camada física com TAGs caóticas em canais Rayleigh. O problema foi rigorosamente formulado como teste de hipótese binária sob restrição $\alpha = 10^{-7}$, alinhado com o critério de Neyman-Pearson e o método clássico de~\cite{ref_xie}. A rede proposta, fundamentada no framework de grandes desvios de~\cite{ref_braca}, aprende a fronteira de decisão ótima a partir de quatro estatísticas ($\tau$, $\hat{h}$, $\widehat{\text{SNR}}$, $E$), superando o correlador clássico em 8 a 15 pontos percentuais de $P_D$ na faixa crítica de 5 a 10~dB. A metodologia de geração de dados com amostragem estratificada e aumento sintético demonstrou-se fundamental para a generalização. Trabalhos futuros investigarão extensões para canais com variação temporal e resistência a ataques adaptativos com conhecimento parcial da TAG.
+Este trabalho apresentou a primeira aplicação de um discriminador neural orientado a dados (D3F) ao problema de autenticação na camada física com tags caóticas em canal Rayleigh, avaliando sistematicamente três representações de entrada sob $\alpha = 10^{-7}$. A investigação seguiu um caminho lógico: partindo do vetor de quatro características fisicamente motivadas, passando pela CNN 1D sobre o sinal bruto, até a ablação sistemática das entradas. O resultado central é contraintuitivo: \textbf{o melhor desempenho é obtido com apenas duas características} — o correlador casado $|\tau|$ e a energia instantânea $E$ —, com $P_D = 87{,}2\%$ a 0~dB, superando tanto o correlador clássico ($8{,}1\%$) quanto a linha de base de quatro características ($82{,}3\%$). A explicação é estrutural: abordagens baseadas em $\mathbf{z}_{eq}$ (1D CNN e DNN-1024) falham abaixo de 15~dB porque sem $|\tau|$ explícito não há como realizar integração coerente quando $\rho_t \approx 0{,}212$ encobre a TAG no ruído. O estudo de ablação confirma que as características auxiliares $\hat{h}$ e $\overline{\text{SNR}}$ são individualmente redundantes e que a chave do desempenho é a distinção entre informação \emph{instantânea} ($\hat{h}$, $E$) e nominal ($\overline{\text{SNR}}$): $[|\tau|, E]$ supera $[|\tau|, \overline{\text{SNR}}]$ em 54~pp a 0~dB. A hipótese de CSI perfeito é confirmada pela diferença inferior a 2~pp entre V1 e V2. Esses resultados estabelecem o par $[|\tau|, E]$ como o núcleo discriminatório mínimo e suficiente para autenticação robusta em canal Rayleigh.
+
+Trabalhos futuros investigarão funções de perda que regularizem diretamente a distribuição de escores $H_0$ — como perda focal ou restrições sobre momentos de ordem superior — e a extensão da abordagem a canais veiculares (V2V/V2X)~\cite{ref_3gpp}, onde a variação rápida do coeficiente $h^i$ exige estimativas de canal mais robustas e representa um campo de aplicação natural para os classificadores orientados a dados aqui avaliados.
 
 \section*{Agradecimentos}
 Os autores agradecem ao Departamento de Eletrônica e Sistemas da Universidade Federal de Pernambuco pelo apoio na realização deste trabalho.
+
+\section*{Lista de Siglas}
+{\small
+\begin{tabular}{@{}p{1.9cm}p{5.9cm}@{}}
+\textbf{1D CNN}    & \textit{One-Dimensional Convolutional Neural Network} \\
+\textbf{AWGN}      & \textit{Additive White Gaussian Noise} \\
+\textbf{BCE}       & \textit{Binary Cross-Entropy} (Entropia Cruzada Binária) \\
+\textbf{BN}        & \textit{Batch Normalization} \\
+\textbf{BPSK}      & \textit{Binary Phase Shift Keying} \\
+\textbf{CNN}       & \textit{Convolutional Neural Network} \\
+\textbf{CSI}       & \textit{Channel State Information} \\
+\textbf{D3F}       & \textit{Data-Driven Detection Framework}~\cite{ref_braca} \\
+\textbf{DNN}       & \textit{Deep Neural Network} \\
+\textbf{GAP}       & \textit{Global Average Pooling} \\
+\textbf{IoT}       & \textit{Internet of Things} \\
+\textbf{LRT}       & \textit{Likelihood Ratio Test} \\
+$\boldsymbol{P_D}$ & Probabilidade de Detecção \\
+\textbf{PLA}       & \textit{Physical Layer Authentication} \\
+\textbf{ReLU}      & \textit{Rectified Linear Unit} \\
+\textbf{SNR}       & \textit{Signal-to-Noise Ratio} \\
+\textbf{SVM}       & \textit{Support Vector Machine} \\
+\textbf{TCL}       & Teorema Central do Limite \\
+\end{tabular}
+}
 
 \begin{thebibliography}{99}
 
@@ -235,13 +259,29 @@ Os autores agradecem ao Departamento de Eletrônica e Sistemas da Universidade F
 
 \bibitem{ref_braca} P. Braca, S. Marano, V. Matta, e P. Willett, ``Statistical Hypothesis Testing Based on Machine Learning: Large Deviations Analysis,'' \textit{IEEE Open J.\ Signal Process.}, v.~3, pp.~464--484, 2022.
 
-\bibitem{ref_joao} J. Costa, \textit{Autenticação na Camada Física com Sequências de Autenticação Caóticas em Canais com Desvanecimento}. Dissertação de Mestrado, Universidade Federal de Pernambuco, Recife, 2023.
+\bibitem{ref_liao} L. Liao, O. Wijesinghe, J. Perez-Ramirez, A. Bhatt, B. Imtiaz, e K. Ding, ``Deep Learning for Wireless Communications,'' \textit{Sensors}, v.~19, n.~11, p.~2440, 2019.
+
+\bibitem{ref_oshea} T. J. O'Shea e J. Hoydis, ``An Introduction to Deep Learning for the Physical Layer,'' \textit{IEEE Trans.\ Cogn.\ Commun.\ Netw.}, v.~3, n.~4, pp.~563--575, 2017.
+
+\bibitem{ref_joao} J. V. C. Evangelista, D. Moreno, D. P. B. Chaves e C. Pimentel, ``Tag Generation Using Chaotic Sequences for Physical-Layer Authentication,'' \textit{IEEE Access}, v.~11, pp.~73080--73087, 2023.
 
 \bibitem{ref_poor} H. V. Poor, \textit{An Introduction to Signal Detection and Estimation}, 2.~ed. Springer-Verlag, 1994.
 
 \bibitem{ref_adam} D. P. Kingma e J. Ba, ``Adam: A Method for Stochastic Optimization,'' em \textit{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, San Diego, CA, EUA, 2015.
 
-\bibitem{ref_proakis} J. G. Proakis e M. Salehi, \textit{Digital Communications}, 5.~ed. McGraw-Hill, 2008.
+\bibitem{ref_goodfellow} I. Goodfellow, Y. Bengio e A. Courville, \textit{Deep Learning}. MIT Press, 2016. Disponível em: \texttt{https://www.deeplearningbook.org}.
+
+\bibitem{ref_proakis} J. G. Proakis e D. G. Manolakis, \textit{Digital Signal Processing: Principles, Algorithms, and Applications}, 4.~ed. Pearson Prentice Hall, 2007.
+
+\bibitem{ref_3gpp} 3GPP, ``Study on Channel Model for Frequencies from 0.5 to 100 GHz,'' Technical Report TR 38.901, v17.0.0, 3rd Generation Partnership Project, 2022.
+
+\bibitem{ref_raya} M. Raya e J.-P. Hubaux, ``Securing Vehicular Ad Hoc Networks,'' \textit{J. Comput. Secur.}, v.~15, n.~1, pp.~39--68, 2007.
+
+\bibitem{ref_shlezinger} N. Shlezinger, N. Farsad, Y.~C. Eldar e A.~J. Goldsmith, ``Model-Based Machine Learning for Communications,'' arXiv:2101.04726, 2021.
+
+\bibitem{ref_veldhuis} R. Veldhuis e D. Zeng, ``On Neyman-Pearson Optimality of Binary Neural Net Classifiers,'' Tech.\ Rep., jun.\ 2021. DOI: 10.36227/techrxiv.14709930.v1.
+
+\bibitem{ref_kay} S. M. Kay, \textit{Fundamentals of Statistical Signal Processing, Vol.~I: Estimation Theory}. Prentice Hall, 1993.
 
 \end{thebibliography}
 

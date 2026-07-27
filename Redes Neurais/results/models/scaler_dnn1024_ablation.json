@@ -1,0 +1,6 @@
+{
+  "mean": 5.653235348290764e-05,
+  "std": 0.3565662305219269,
+  "input": "z_eq (flattened 1024-dim)",
+  "dataset": "dataset_cnn_yeq_0_30dB.h5"
+}

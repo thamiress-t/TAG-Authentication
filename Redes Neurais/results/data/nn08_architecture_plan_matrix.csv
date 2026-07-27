@@ -1,0 +1,37 @@
+family,variant,feature_set,architecture,pd_0db,pd_5db,status,source
+tau,V5,[|tau|],DNN,0.0,0.9896265560165975,executado,NN_02b
+tau,V5,[|tau|],SVM-RBF,,,pendente,-
+tau,V5,[|tau|],KNN-5,,,pendente,-
+tau,V5,[|tau|],XGBoost,,,pendente,-
+tau,V6,"[|tau|, h_hat]",DNN,0.8465636654235482,0.995591286307054,executado,NN_02b
+tau,V6,"[|tau|, h_hat]",SVM-RBF,,,pendente,-
+tau,V6,"[|tau|, h_hat]",KNN-5,,,pendente,-
+tau,V6,"[|tau|, h_hat]",XGBoost,,,pendente,-
+tau,V7,"[|tau|, h_hat, SNR_bar]",DNN,0.8204581779435269,0.9950726141078838,executado,NN_02b
+tau,V7,"[|tau|, h_hat, SNR_bar]",SVM-RBF,,,pendente,-
+tau,V7,"[|tau|, h_hat, SNR_bar]",KNN-5,,,pendente,-
+tau,V7,"[|tau|, h_hat, SNR_bar]",XGBoost,,,pendente,-
+tau,V8,"[|tau|, h_hat, E]",DNN,0.8161960575386255,0.9950726141078838,executado,NN_02b
+tau,V8,"[|tau|, h_hat, E]",SVM-RBF,,,pendente,-
+tau,V8,"[|tau|, h_hat, E]",KNN-5,,,pendente,-
+tau,V8,"[|tau|, h_hat, E]",XGBoost,,,pendente,-
+tau,V1,"[|tau|, h_hat, SNR_bar, E]",DNN,0.83697389451252,0.9942946058091287,executado,NN_02b
+tau,V1,"[|tau|, h_hat, SNR_bar, E]",SVM-RBF,,,pendente,-
+tau,V1,"[|tau|, h_hat, SNR_bar, E]",KNN-5,,,pendente,-
+tau,V1,"[|tau|, h_hat, SNR_bar, E]",XGBoost,,,pendente,-
+z_eq,A,z_eq[1024],CNN-1D,0.004262120404901438,0.0005186721991701245,executado,NN_02c
+z_eq,A,z_eq[1024],MLP,,,pendente,-
+z_eq,A,z_eq[1024],SVM-RBF,,,pendente,-
+z_eq,A,z_eq[1024],XGBoost,,,pendente,-
+z_eq,B,z_eq[1024] + h,CNN-1D,0.0015982951518380393,0.0005186721991701245,executado,NN_02c
+z_eq,B,z_eq[1024] + h,MLP,,,pendente,-
+z_eq,B,z_eq[1024] + h,SVM-RBF,,,pendente,-
+z_eq,B,z_eq[1024] + h,XGBoost,,,pendente,-
+z_eq,C,z_eq[1024] + h + SNR,CNN-1D,0.0,0.0,executado,NN_02c
+z_eq,C,z_eq[1024] + h + SNR,MLP,,,pendente,-
+z_eq,C,z_eq[1024] + h + SNR,SVM-RBF,,,pendente,-
+z_eq,C,z_eq[1024] + h + SNR,XGBoost,,,pendente,-
+z_eq,D,z_eq[1024] + |tau|,CNN-1D,0.8833244539158231,0.9968879668049793,executado,NN_02c
+z_eq,D,z_eq[1024] + |tau|,MLP,,,pendente,-
+z_eq,D,z_eq[1024] + |tau|,SVM-RBF,,,pendente,-
+z_eq,D,z_eq[1024] + |tau|,XGBoost,,,pendente,-

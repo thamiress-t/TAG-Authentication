@@ -1,0 +1,98 @@
+# 🚀 SOLUÇÃO: Treinamento Travado na GPU
+
+## Problema
+O treinamento estava travado na primeira época porque:
+- ❌ Notebook não estava usando o venv com GPU
+- ❌ XLA compilation causava hang de 50+ minutos
+- ❌ Batch size não era otimizado para GPU
+
+## Solução Implementada
+
+### ✅ Notebook Corrigido
+Alterações em **5 células** do notebook:
+- **Célula 1**: Detecção robusta de GPU + erro handling
+- **Célula 3**: Batch size adaptativo (256 GPU / 64 CPU)
+- **Célula 4**: `jit_compile=False` para evitar XLA hang
+- **Célula 5**: Callbacks com monitoramento detalhado
+- **Célula 6**: Treinamento com progress tracking
+
+### ✅ Ambiente Correto
+```
+/home/thami/venv_tf_gpu/
+├── TensorFlow 2.21.0
+├── CUDA libraries (via pip)
+└── GPU: NVIDIA RTX 4050 (6GB) ✅ DETECTADA
+```
+
+## 🎯 Como Usar
+
+### Forma Rápida (Recomendada)
+```bash
+# WSL Terminal
+./start_jupyter_gpu.sh
+
+# Selecione: 1 para Jupyter Lab ou 2 para Jupyter Notebook
+```
+
+### Forma Manual
+```bash
+# WSL Terminal
+source /home/thami/venv_tf_gpu/bin/activate
+jupyter lab
+```
+
+### Windows (PowerShell)
+```powershell
+.\start_jupyter_gpu.ps1
+```
+
+## ✅ Verificação
+Abra o notebook e rode a Célula 1. Você deverá ver:
+
+```
+TensorFlow: 2.21.0
+GPUs found: 1 ✅
+✅ Memory growth enabled on 1 GPU(s).
+Mixed precision policy: mixed_float16
+XLA JIT: disabled (avoids 50+ min autotuner hang)
+```
+
+Se vir `GPUs found: 0`:
+1. Certifique-se de ativar o venv: `source /home/thami/venv_tf_gpu/bin/activate`
+2. Rode o diagnóstico: `python fix_gpu_wsl.py`
+
+## 📊 Performance Esperada
+- ⏱️ Primeira época: < 5 minutos (não mais travada!)
+- 📈 GPU Utilization: 60-90%
+- 🔄 Treinamento completo (100 épocas): ~4-8 horas
+
+## 📚 Documentação Criada
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `SETUP_GPU_WSL.md` | Guia completo de setup e troubleshooting |
+| `start_jupyter_gpu.sh` | Launcher para WSL/Linux |
+| `start_jupyter_gpu.ps1` | Launcher para Windows PowerShell |
+| `fix_gpu_wsl.py` | Ferramenta de diagnóstico |
+
+## 🔧 Troubleshooting
+
+Se ainda tiver problemas:
+
+```bash
+# Teste rápido
+source /home/thami/venv_tf_gpu/bin/activate
+python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+
+# Diagnóstico completo
+python fix_gpu_wsl.py
+
+# Reiniciar WSL (se necessário)
+wsl --shutdown  # (no PowerShell do Windows)
+```
+
+---
+
+✅ **Status**: Pronto para treinar com GPU!
+📅 **Data**: 12 de Julho de 2026
+🎉 **GPU**: NVIDIA RTX 4050 Detectada e Configurada
