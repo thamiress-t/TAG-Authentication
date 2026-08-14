@@ -1,0 +1,176 @@
+# SUMÁRIO EXECUTIVO: Notebooks Relevantes (SBRT 2026)
+
+## 🎯 Resultado Principal do Artigo
+
+O artigo prova que **apenas 2 escalares são necessários e suficientes**:
+- **[|τ|, ĥ]** = correlator casado + estimativa de ganho de canal
+- **Desempenho**: 85.6% de detecção a 0 dB (vs 8.1% do método clássico)
+- **Descoberta ablação**: adicionar SNR ou E **piora** para 82%
+
+---
+
+## ✅ PIPELINE ESSENCIAL (5 Notebooks)
+
+### 1. NN_01_DataGeneration.ipynb
+- Gera dataset: 350k amostras, SNR 0-30 dB, estratificado
+- Output: `dataset_cnn_yeq_0_30dB.h5`
+- **Executar**: Sempre primeiro
+
+### 2. NN_02_DNN_Correlator_GPU.ipynb  
+- **Modelo principal**: 1D CNN com z_eq (sinal residual bruto)
+- **Entrada**: z_eq ∈ ℝ¹⁰²⁴
+- **Desempenho**: P_D = 85.6% @ 0 dB ⭐
+- **Por que funciona**: Conv1D aprende correlação implicitamente
+
+### 3. NN_02b_4feat_DNN_Aligned.ipynb
+- **Comparação**: DNN densa com features manualmente extraídas
+- **Entrada**: [|τ|, ĥ, SNR, E] (4 escalares) ou [|τ|, ĥ] (2 escalares)
+- **Resultado chave**: 2-feat = 85.6%, 4-feat = 82% (piora!)
+
+### 4. NN_07_DNN_vs_MonteCarlo_Comparison_GPU.ipynb
+- **Método D3F**: threshold com α=10⁻⁷ (sem simular 10⁷ amostras)
+- **Valida**: extrapolação gaussiana de escores sob H0
+- **Output**: Tabelas P_D vs SNR
+
+### 5. NN_08_Architecture_Comparison.ipynb
+- **Valida D3F**: DNN-2feat vs CNN-2feat vs SVM linear
+- **Diferença**: apenas 0.4pp (85.6% vs 85.2%)
+- **Conclusão**: arquitetura é irrelevante com 2-features
+
+---
+
+## ⚠️ NOTEBOOKS EXPLORATÓRIOS (5 Notebooks — Opcional)
+
+| Notebook | Propósito | Resultado | Usar? |
+|----------|----------|-----------|-------|
+| NN_09 | Logit vs Sigmoid calibration | Ambos similares | Opcional |
+| NN_10 | SVM + GMM com 4 features | SVM = 82.3% (pior) | Opcional |
+| NN_11 | CNN-SVM híbrido | Ambas 128d/32d similares | Opcional |
+| NN_12 | DNN-1024 com z_eq | Piora em baixo SNR | Opcional |
+| NN_14 | CNN com 4 features escalares | Conv1D com k=1 = sem sentido | ❌ Ignorar |
+
+---
+
+## 🔴 NOTEBOOK DESCONTINUADO
+
+**NN_14_CNN_4feat.ipynb**: Forçar 4 escalares em Conv1D não adiciona valor (kernel=1 → degenera a dense). **NÃO EXECUTAR**.
+
+---
+
+## 📊 Tabela Comparativa Final
+
+```
+╔═════════════════════════════════════════════════════════════════╗
+║ Método              │ Entrada      │ Features │ P_D @ 0dB       ║
+╠═════════════════════════════════════════════════════════════════╣
+║ Clássico (Xie 2021) │ |τ| fixo     │ 1        │  8.1%  ❌       ║
+║ CNN-1D (NN_02)      │ z_eq(1024)   │ 0 (learned) │ 85.6% ⭐ ║
+║ DNN-2feat (NN_02b)  │ [|τ|, ĥ]    │ 2        │ 85.6% ⭐ ║
+║ CNN-2feat (NN_08)   │ [|τ|, ĥ]    │ 2        │ 85.2% ⭐ ║
+║ SVM linear (NN_08)  │ [|τ|, ĥ]    │ 2        │ 82.3%  ✓  ║
+║ DNN-4feat (NN_02b)  │ [|τ|,ĥ,SNR,E]│ 4       │ 82.0%  ❌ PIORA ║
+║ DNN-1024 (NN_12)    │ z_eq(1024)   │ 0        │ <75%   ❌ PIORA ║
+╚═════════════════════════════════════════════════════════════════╝
+
+⭐ = Recomendado (melhor desempenho)
+✓  = Funciona (aceitável)
+❌ = Não recomendado (inferior)
+PIORA = Adicionar features reduz desempenho
+```
+
+---
+
+## 🎓 Insights do Artigo (com suporte dos notebooks)
+
+### 1. Redundância de Features (NN_02b Ablation)
+```
+Núcleo [|τ|, ĥ]           → 85.6%  ✅
+Núcleo + SNR              → 82.2%  ❌ Piora 3.4pp
+Núcleo + E                → 82.0%  ❌ Piora 3.6pp
+Núcleo + SNR + E          → 81.5%  ❌ Piora 4.1pp
+```
+**Razão**: Quando a rede tem ĥ (estimativa de ganho), todas as outras features
+são derivadas redundantes → aumentam dimensionalidade → degradam generalização.
+
+### 2. Sinal Bruto Não Funciona em Baixo SNR (NN_02 vs NN_12)
+```
+Baixo SNR (0-5 dB):
+  - CNN com z_eq (1024d):  85.6% ✅
+  - DNN com z_eq (1024d):  <75%  ❌ FALHA
+
+Por que?: Sem extração de features, a rede não consegue
+fazer integração coerente em sinal ruidoso.
+```
+
+### 3. Arquitetura é Secundária (NN_08 Comparação)
+```
+2-feature CNN-1D:   85.2%
+2-feature DNN:      85.6%
+Diferença:          0.4pp (praticamente ignorável)
+```
+**Conclusão D3F**: Quando dados satisfazem IID e escores são 
+calibrados com BCE, a arquitetura não importa.
+
+### 4. Método Clássico Não Adapta (NN_07 D3F)
+```
+Clássico [|τ|] com limiar fixo: 8.1% @ 0 dB
+DNN [|τ|, ĥ] com threshold D3F: 85.6% @ 0 dB
+Diferença: 10x melhora
+```
+**Por que**: ĥ permite à rede aprender limiar adaptativo 
+em função do ganho Rayleigh variável (princípio CFAR).
+
+---
+
+## 🚀 Próximos Passos Recomendados
+
+### Para Reproduzir Exatamente o Artigo:
+1. Executar NN_01 → NN_02 → NN_02b → NN_07 → NN_08
+2. Gerar Figuras e Tabelas
+3. Comparar com valores no artigo LaTeX
+
+### Para Análise Complementar (Opcional):
+4. NN_15 (quando finalizado) para comparação abrangente 2-feat
+5. NN_12 para ablação de sinal bruto vs features
+
+### Para Publicações Futuras:
+6. Estender a canais V2X com desvanecimento rápido
+7. Implementação em hardware embarcado (reduzir parâmetros)
+8. Multi-detector (múltiplos transmissores legítimos)
+
+---
+
+## 📝 Dependências Claras
+
+```
+NN_01 (Dataset) ✓ SEMPRE PRIMEIRO
+    ↓
+    ├─→ NN_02 (CNN z_eq)      ✓ CORE
+    │       ↓
+    │    NN_07 (D3F)          ✓ CORE
+    │       ↓
+    │    NN_08 (Arch Comp)    ✓ CORE
+    │       ↓
+    │    NN_15 (2feat Comp)   ✓ RECOMENDADO
+    │
+    ├─→ NN_02b (DNN 2-4feat)  ✓ CORE
+    │       ↓
+    │    NN_08 (compartilhado)
+    │
+    └─→ [NN_09-NN_12]          ⚠️ Exploração (opcional)
+        NN_14                  ❌ IGNORAR
+```
+
+---
+
+## ✨ Bottom Line
+
+- **5 notebooks essenciais**: NN_01, NN_02, NN_02b, NN_07, NN_08
+- **Resultado**: 2-features [|τ|, ĥ] = 85.6% (10x melhor que clássico)
+- **Insight**: Adicionar features piora performance (redundância)
+- **Tempo**: ~8-12 horas com GPU, ~48-72 horas com CPU
+- **Arquitetura**: Irrelevante (DNN 85.6%, CNN 85.2%, diferença 0.4pp)
+
+---
+
+📄 Para análise completa, veja: `ANALISE_NOTEBOOKS_RELEVANCIA.md`

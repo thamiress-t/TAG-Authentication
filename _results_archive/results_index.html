@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAG-Authentication Results Archive</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .category {
+            margin-bottom: 40px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .category h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .category-desc {
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background: #f0f0f0;
+        }
+        .file-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+        .status-ok { color: #27ae60; font-weight: bold; }
+        .size-large { color: #e74c3c; }
+        .size-medium { color: #f39c12; }
+        .size-small { color: #27ae60; }
+        .summary {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            display: inline-block;
+            margin-right: 30px;
+        }
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .notes {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .notes h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #999;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 TAG-Authentication Results Archive</h1>
+            <p class="timestamp">Gerado em: 2026-05-10T20:05:43.076196</p>
+        </header>
+
+        <div class="summary">
+            <h2 style="margin-bottom: 15px; color: #667eea;">📈 Resumo</h2>
+            <div class="stat-box"><div class="stat-value">5</div><div class="stat-label">models</div></div>
+<div class="stat-box"><div class="stat-value">18</div><div class="stat-label">visualizations</div></div>
+<div class="stat-box"><div class="stat-value">5</div><div class="stat-label">data</div></div>
+<div class="stat-box"><div class="stat-value">1</div><div class="stat-label">logs</div></div>
+<div class="stat-box"><div class="stat-value">5</div><div class="stat-label">execution_logs</div></div>
+<div class="stat-box"><div class="stat-value">34</div><div class="stat-label">Total de Arquivos</div></div>
+<div class="stat-box"><div class="stat-value">869.4 MB</div><div class="stat-label">Tamanho Total</div></div>
+        </div>
+        
+        
+        <div class="category">
+            <h2>📁 Models</h2>
+            <p class="category-desc">Modelos treinados</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Tamanho</th>
+                        <th>Modificado</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>cnn1d_tag_auth_best.keras</strong></td>
+                        <td class="size-small">1.39 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>cnn1d_threshold.json</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>model_dnn_4feat_aligned.keras</strong></td>
+                        <td class="size-small">0.56 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>model_dnn_correlator.h5</strong></td>
+                        <td class="size-small">0.55 MB</td>
+                        <td>2026-04-23</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>scaler_4feat_aligned.json</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="category">
+            <h2>📁 Visualizations</h2>
+            <p class="category-desc">Gráficos e visualizações</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Tamanho</th>
+                        <th>Modificado</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>Figure2_DNN_vs_Classical_Auth-SUP.png</strong></td>
+                        <td class="size-small">0.14 MB</td>
+                        <td>2026-04-26</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>Figure2_DNN_vs_Classical_CONSTRAINED_alpha.png</strong></td>
+                        <td class="size-small">0.20 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>Figure2_PD_vs_SNR_GPU.png</strong></td>
+                        <td class="size-small">0.11 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>NN01_beta_vs_L_validation.png</strong></td>
+                        <td class="size-small">0.06 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>NN01_dataset_overview.png</strong></td>
+                        <td class="size-small">0.19 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>NN02_GPU_CNN1D_results.png</strong></td>
+                        <td class="size-small">0.18 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>NN02b_4feat_aligned_results.png</strong></td>
+                        <td class="size-small">0.16 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>NN08_Architecture_Comparison.png</strong></td>
+                        <td class="size-small">0.10 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>PD vs SNR 1D.png</strong></td>
+                        <td class="size-small">0.07 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dataset_exploration.png</strong></td>
+                        <td class="size-small">0.12 MB</td>
+                        <td>2026-04-12</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_alpha_constrained_optimization.png</strong></td>
+                        <td class="size-small">0.22 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_detection_vs_signal_length.png</strong></td>
+                        <td class="size-small">0.05 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_fnr_fpr_vs_threshold.png</strong></td>
+                        <td class="size-small">0.08 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_performance_by_signal_strength.png</strong></td>
+                        <td class="size-small">0.08 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_vs_mc_histograms.png</strong></td>
+                        <td class="size-small">0.07 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dnn_vs_mc_thresholds_comparison.png</strong></td>
+                        <td class="size-small">0.22 MB</td>
+                        <td>2026-05-07</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>results_dnn_correlator.png</strong></td>
+                        <td class="size-small">0.11 MB</td>
+                        <td>2026-04-23</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dataset_visualizations.png</strong></td>
+                        <td class="size-small">0.15 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="category">
+            <h2>📁 Data</h2>
+            <p class="category-desc">Datasets e métricas</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Tamanho</th>
+                        <th>Modificado</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>dataset_cnn_yeq_0_30dB.h5</strong></td>
+                        <td class="size-large">860.87 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dataset_nn_100k.h5</strong></td>
+                        <td class="size-small">2.32 MB</td>
+                        <td>2026-04-12</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>dataset_nn_stratified_0_30dB.h5</strong></td>
+                        <td class="size-small">1.40 MB</td>
+                        <td>2026-04-23</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>figure2_pd_vs_snr_gpu.json</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>nn08_architecture_comparison.json</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="category">
+            <h2>📁 Logs</h2>
+            <p class="category-desc">Logs de execução</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Tamanho</th>
+                        <th>Modificado</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>events.out.tfevents.1778399325.THAMIRES.6080.0.v2</strong></td>
+                        <td class="size-small">0.01 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="category">
+            <h2>📁 Execution Logs</h2>
+            <p class="category-desc">Logs de execução do orquestrador</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Tamanho</th>
+                        <th>Modificado</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><strong>execution_log.txt</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>execution_log_v2.txt</strong></td>
+                        <td class="size-small">0.01 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>monitor_progress.py</strong></td>
+                        <td class="size-small">0.00 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>notebook_orchestrator.py</strong></td>
+                        <td class="size-small">0.01 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                    <tr>
+                        <td><strong>notebook_orchestrator_v2.py</strong></td>
+                        <td class="size-small">0.01 MB</td>
+                        <td>2026-05-10</td>
+                        <td class="status-ok">✓</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="notes">
+            <h3>📝 Notas Importantes</h3>
+            <ul>
+                <li><strong>Datasets:</strong> Arquivos .h5 contêm os datasets de treinamento, validação e teste</li>
+                <li><strong>Modelos:</strong> Arquivos .keras e .h5 são os modelos treinados (podem ser carregados com TensorFlow)</li>
+                <li><strong>Métricas:</strong> Arquivos .json contêm thresholds e métricas de performance</li>
+                <li><strong>Visualizações:</strong> Arquivos .png contêm gráficos dos resultados (ROC, PD vs SNR, etc)</li>
+                <li><strong>Para usar os modelos:</strong> Use <code>keras.models.load_model('caminho/arquivo.keras')</code></li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Arquivos organizados e documentados pelo Notebook Orchestrator</p>
+            <p>Repositório: /mnt/c/Users/thami/OneDrive/Documents/TAG-Authentication</p>
+        </footer>
+    </div>
+</body>
+</html>

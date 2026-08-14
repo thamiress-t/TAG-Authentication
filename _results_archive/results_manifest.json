@@ -1,0 +1,274 @@
+{
+  "generated": "2026-05-10T20:05:43.076196",
+  "repo_root": "/mnt/c/Users/thami/OneDrive/Documents/TAG-Authentication",
+  "categories": {
+    "models": {
+      "description": "Modelos treinados",
+      "path": "Redes Neurais/results/models",
+      "files": [
+        {
+          "name": "cnn1d_tag_auth_best.keras",
+          "path": "Redes Neurais/results/models/cnn1d_tag_auth_best.keras",
+          "size_mb": 1.3917779922485352,
+          "modified": "2026-05-10T19:49:13.650709",
+          "exists": true
+        },
+        {
+          "name": "cnn1d_threshold.json",
+          "path": "Redes Neurais/results/models/cnn1d_threshold.json",
+          "size_mb": 0.00043201446533203125,
+          "modified": "2026-05-10T19:51:02.746457",
+          "exists": true
+        },
+        {
+          "name": "model_dnn_4feat_aligned.keras",
+          "path": "Redes Neurais/results/models/model_dnn_4feat_aligned.keras",
+          "size_mb": 0.5555200576782227,
+          "modified": "2026-05-10T20:00:34.952627",
+          "exists": true
+        },
+        {
+          "name": "model_dnn_correlator.h5",
+          "path": "Redes Neurais/results/models/model_dnn_correlator.h5",
+          "size_mb": 0.55218505859375,
+          "modified": "2026-04-23T22:55:59.838626",
+          "exists": true
+        },
+        {
+          "name": "scaler_4feat_aligned.json",
+          "path": "Redes Neurais/results/models/scaler_4feat_aligned.json",
+          "size_mb": 0.0003261566162109375,
+          "modified": "2026-05-10T19:58:29.431592",
+          "exists": true
+        }
+      ]
+    },
+    "visualizations": {
+      "description": "Gráficos e visualizações",
+      "path": "Redes Neurais/results/visualizations",
+      "files": [
+        {
+          "name": "Figure2_DNN_vs_Classical_Auth-SUP.png",
+          "path": "Redes Neurais/results/visualizations/Figure2_DNN_vs_Classical_Auth-SUP.png",
+          "size_mb": 0.1441516876220703,
+          "modified": "2026-04-26T19:53:04.374227",
+          "exists": true
+        },
+        {
+          "name": "Figure2_DNN_vs_Classical_CONSTRAINED_alpha.png",
+          "path": "Redes Neurais/results/visualizations/Figure2_DNN_vs_Classical_CONSTRAINED_alpha.png",
+          "size_mb": 0.19604015350341797,
+          "modified": "2026-05-07T21:44:15.590552",
+          "exists": true
+        },
+        {
+          "name": "Figure2_PD_vs_SNR_GPU.png",
+          "path": "Redes Neurais/results/visualizations/Figure2_PD_vs_SNR_GPU.png",
+          "size_mb": 0.10668277740478516,
+          "modified": "2026-05-10T18:09:03.655996",
+          "exists": true
+        },
+        {
+          "name": "NN01_beta_vs_L_validation.png",
+          "path": "Redes Neurais/results/visualizations/NN01_beta_vs_L_validation.png",
+          "size_mb": 0.058349609375,
+          "modified": "2026-05-10T04:08:05.846468",
+          "exists": true
+        },
+        {
+          "name": "NN01_dataset_overview.png",
+          "path": "Redes Neurais/results/visualizations/NN01_dataset_overview.png",
+          "size_mb": 0.1902933120727539,
+          "modified": "2026-05-10T04:07:55.839745",
+          "exists": true
+        },
+        {
+          "name": "NN02_GPU_CNN1D_results.png",
+          "path": "Redes Neurais/results/visualizations/NN02_GPU_CNN1D_results.png",
+          "size_mb": 0.1753702163696289,
+          "modified": "2026-05-10T19:51:02.118053",
+          "exists": true
+        },
+        {
+          "name": "NN02b_4feat_aligned_results.png",
+          "path": "Redes Neurais/results/visualizations/NN02b_4feat_aligned_results.png",
+          "size_mb": 0.15848922729492188,
+          "modified": "2026-05-10T20:01:59.104079",
+          "exists": true
+        },
+        {
+          "name": "NN08_Architecture_Comparison.png",
+          "path": "Redes Neurais/results/visualizations/NN08_Architecture_Comparison.png",
+          "size_mb": 0.10428619384765625,
+          "modified": "2026-05-10T18:35:01.449492",
+          "exists": true
+        },
+        {
+          "name": "PD vs SNR 1D.png",
+          "path": "Redes Neurais/results/visualizations/PD vs SNR 1D.png",
+          "size_mb": 0.06800556182861328,
+          "modified": "2026-05-10T18:24:03.604578",
+          "exists": true
+        },
+        {
+          "name": "dataset_exploration.png",
+          "path": "Redes Neurais/results/visualizations/dataset_exploration.png",
+          "size_mb": 0.11728858947753906,
+          "modified": "2026-04-12T17:53:10.449732",
+          "exists": true
+        },
+        {
+          "name": "dnn_alpha_constrained_optimization.png",
+          "path": "Redes Neurais/results/visualizations/dnn_alpha_constrained_optimization.png",
+          "size_mb": 0.2200336456298828,
+          "modified": "2026-05-07T21:43:13.710946",
+          "exists": true
+        },
+        {
+          "name": "dnn_detection_vs_signal_length.png",
+          "path": "Redes Neurais/results/visualizations/dnn_detection_vs_signal_length.png",
+          "size_mb": 0.051726341247558594,
+          "modified": "2026-05-07T21:44:16.102063",
+          "exists": true
+        },
+        {
+          "name": "dnn_fnr_fpr_vs_threshold.png",
+          "path": "Redes Neurais/results/visualizations/dnn_fnr_fpr_vs_threshold.png",
+          "size_mb": 0.07822418212890625,
+          "modified": "2026-05-07T21:38:56.140228",
+          "exists": true
+        },
+        {
+          "name": "dnn_performance_by_signal_strength.png",
+          "path": "Redes Neurais/results/visualizations/dnn_performance_by_signal_strength.png",
+          "size_mb": 0.08257484436035156,
+          "modified": "2026-05-07T21:38:56.675333",
+          "exists": true
+        },
+        {
+          "name": "dnn_vs_mc_histograms.png",
+          "path": "Redes Neurais/results/visualizations/dnn_vs_mc_histograms.png",
+          "size_mb": 0.06516075134277344,
+          "modified": "2026-05-07T21:38:51.291098",
+          "exists": true
+        },
+        {
+          "name": "dnn_vs_mc_thresholds_comparison.png",
+          "path": "Redes Neurais/results/visualizations/dnn_vs_mc_thresholds_comparison.png",
+          "size_mb": 0.22220897674560547,
+          "modified": "2026-05-07T21:43:11.939136",
+          "exists": true
+        },
+        {
+          "name": "results_dnn_correlator.png",
+          "path": "Redes Neurais/results/visualizations/results_dnn_correlator.png",
+          "size_mb": 0.11019611358642578,
+          "modified": "2026-04-23T22:56:18.915441",
+          "exists": true
+        },
+        {
+          "name": "dataset_visualizations.png",
+          "path": "Redes Neurais/results/visualizations/sbrt2026/dataset_visualizations.png",
+          "size_mb": 0.14859294891357422,
+          "modified": "2026-05-10T01:36:05.255909",
+          "exists": true
+        }
+      ]
+    },
+    "data": {
+      "description": "Datasets e métricas",
+      "path": "Redes Neurais/results/data",
+      "files": [
+        {
+          "name": "dataset_cnn_yeq_0_30dB.h5",
+          "path": "Redes Neurais/results/data/dataset_cnn_yeq_0_30dB.h5",
+          "size_mb": 860.8739538192749,
+          "modified": "2026-05-10T04:07:53.393616",
+          "exists": true
+        },
+        {
+          "name": "dataset_nn_100k.h5",
+          "path": "Redes Neurais/results/data/dataset_nn_100k.h5",
+          "size_mb": 2.3238677978515625,
+          "modified": "2026-04-12T22:54:38.338543",
+          "exists": true
+        },
+        {
+          "name": "dataset_nn_stratified_0_30dB.h5",
+          "path": "Redes Neurais/results/data/dataset_nn_stratified_0_30dB.h5",
+          "size_mb": 1.4044485092163086,
+          "modified": "2026-04-23T22:52:57.612131",
+          "exists": true
+        },
+        {
+          "name": "figure2_pd_vs_snr_gpu.json",
+          "path": "Redes Neurais/results/data/figure2_pd_vs_snr_gpu.json",
+          "size_mb": 0.0011768341064453125,
+          "modified": "2026-05-10T18:09:03.820458",
+          "exists": true
+        },
+        {
+          "name": "nn08_architecture_comparison.json",
+          "path": "Redes Neurais/results/data/nn08_architecture_comparison.json",
+          "size_mb": 0.00125885009765625,
+          "modified": "2026-05-10T18:35:01.578746",
+          "exists": true
+        }
+      ]
+    },
+    "logs": {
+      "description": "Logs de execução",
+      "path": "Redes Neurais/results/logs",
+      "files": [
+        {
+          "name": "events.out.tfevents.1778399325.THAMIRES.6080.0.v2",
+          "path": "Redes Neurais/results/logs/cnn1d_gpu/train/events.out.tfevents.1778399325.THAMIRES.6080.0.v2",
+          "size_mb": 0.013653755187988281,
+          "modified": "2026-05-10T04:48:47.968058",
+          "exists": true
+        }
+      ]
+    },
+    "execution_logs": {
+      "description": "Logs de execução do orquestrador",
+      "path": ".",
+      "files": [
+        {
+          "name": "execution_log.txt",
+          "path": "execution_log.txt",
+          "size_mb": 0.0018863677978515625,
+          "modified": "2026-05-10T19:57:07.933618",
+          "exists": true
+        },
+        {
+          "name": "execution_log_v2.txt",
+          "path": "execution_log_v2.txt",
+          "size_mb": 0.0065288543701171875,
+          "modified": "2026-05-10T20:02:17.192942",
+          "exists": true
+        },
+        {
+          "name": "monitor_progress.py",
+          "path": "monitor_progress.py",
+          "size_mb": 0.0032091140747070312,
+          "modified": "2026-05-10T19:59:34.656320",
+          "exists": true
+        },
+        {
+          "name": "notebook_orchestrator.py",
+          "path": "notebook_orchestrator.py",
+          "size_mb": 0.006440162658691406,
+          "modified": "2026-05-10T19:48:08.357632",
+          "exists": true
+        },
+        {
+          "name": "notebook_orchestrator_v2.py",
+          "path": "notebook_orchestrator_v2.py",
+          "size_mb": 0.0073261260986328125,
+          "modified": "2026-05-10T19:57:54.951667",
+          "exists": true
+        }
+      ]
+    }
+  }
+}

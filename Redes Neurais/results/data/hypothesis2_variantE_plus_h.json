@@ -1,0 +1,23 @@
+{
+  "description": "Variante E (z_eq - tag_ref) + h_est, warm-start de dnn_variant_E_best.keras",
+  "epochs_run": 15,
+  "layers_reused_from_checkpoint": 4,
+  "pd_d3f": {
+    "0": 0.0,
+    "5": 0.0,
+    "10": 0.0,
+    "15": 0.9574803149606299,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  },
+  "reference_variant_E_no_h": {
+    "0": 0.002,
+    "5": 0.002,
+    "10": 0.0,
+    "15": 0.0,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  }
+}

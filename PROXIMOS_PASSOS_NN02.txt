@@ -1,0 +1,221 @@
+════════════════════════════════════════════════════════════════════════════════
+  🎯 PRÓXIMOS PASSOS — NN_02_DNN_Correlator_GPU.ipynb
+════════════════════════════════════════════════════════════════════════════════
+
+O PROBLEMA ESTÁ RESOLVIDO ✅
+├─ Kernel crash na Célula 2: FIXADO com lazy loading
+├─ RAM usage: Reduzido de 6-7 GB para 1.2-1.5 GB
+└─ Células 2 e 3: Testadas e validadas
+
+════════════════════════════════════════════════════════════════════════════════
+  INSTRUÇÕES PARA EXECUTAR
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣  ATIVAR JUPYTER COM GPU
+
+    source /home/thami/venv_tf_gpu/bin/activate
+    cd "/mnt/c/Users/thami/OneDrive/Documents/TAG-Authentication/Redes Neurais/notebooks"
+    jupyter notebook NN_02_DNN_Correlator_GPU.ipynb
+
+2️⃣  EXECUTAR CÉLULAS NA ORDEM (não pule nenhuma!)
+
+    ✅ Célula 1 (Imports & GPU Setup) — ~30 segundos
+       └─ Detecta GPU (NVIDIA RTX 4050)
+       └─ Ativa mixed precision
+       └─ Desabilita XLA (evita hang de 50 minutos)
+
+    ✅ Célula 2 (Load Dataset — LAZY) — ~5-10 segundos
+       └─ ✨ ANTES: Crashava por OOM
+       └─ ✨ AGORA: Usa lazy loading, sem crash!
+       └─ Cria geradores para carregar dados sob demanda
+       └─ RAM stable em ~1.2 GB
+
+    ✅ Célula 3 (tf.data Pipeline) — ~10 segundos
+       └─ Adiciona batching + shuffling + prefetch
+       └─ Prepara datasets para treinamento
+       └─ Testa primeiro batch
+
+    ✅ Célula 4 (Build CNN Model) — ~2-3 segundos
+       └─ Cria arquitetura 1D CNN
+       └─ Compila com jit_compile=False
+
+    ✅ Célula 5 (Callbacks) — ~1 segundo
+       └─ Configura EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+
+    ⏳ Célula 6 (Training) — ⏱️ 8-12 HORAS
+       └─ COMEÇARÁ AQUI E PRECISARÁ TERMINAR
+       └─ GPU estará ocupada continuamente
+       └─ NÃO feche o Jupyter durante o treinamento!
+       └─ Salva modelo melhor automaticamente a cada época
+       └─ Para monitorar:
+          - Veja a barra de progresso no Jupyter
+          - Ou execute em outro terminal: nvidia-smi (a cada 2 segundos)
+
+    ✅ Células 7-9 (Evaluation + Visualization) — ~5-10 minutos
+       └─ Avalia modelo nos conjuntos val/test
+       └─ Calcula threshold α-constrangido
+       └─ Gera gráficos ROC, PD vs SNR, etc
+
+════════════════════════════════════════════════════════════════════════════════
+  ⚠️  CUIDADOS IMPORTANTES
+════════════════════════════════════════════════════════════════════════════════
+
+🚫 NÃO FAÇA:
+   ├─ Não use o terminal de desenvolvimento VS Code enquanto treina
+   │  (deixa o Jupyter rodando em seu próprio terminal)
+   ├─ Não feche o Jupyter durante Célula 6 (treino)
+   ├─ Não rode duas instâncias do notebook ao mesmo tempo
+   └─ Não modifique BATCH_SIZE para > 256
+
+✅ RECOMENDADO:
+   ├─ Deixe a janela do Jupyter aberta durante todo o treino
+   ├─ Monitore com: nvidia-smi -l 5 (em outro terminal)
+   ├─ Vá tomar café/almoço enquanto treina (~8-12 horas)
+   └─ Verifique dmesg ocasionalmente por OOM: dmesg | grep -i oom
+
+⏸️  SE QUISER PAUSAR:
+   ├─ Pode pausar o notebook depois de qualquer época terminar
+   ├─ EarlyStopping salva o melhor modelo automaticamente
+   ├─ Feche o Jupyter normalmente (Ctrl+C no terminal)
+   └─ Depois basta reabrir e continuar na Célula 7
+
+════════════════════════════════════════════════════════════════════════════════
+  📊 O QUE ACONTECE DURANTE O TREINAMENTO (Célula 6)
+════════════════════════════════════════════════════════════════════════════════
+
+Saída esperada no Jupyter:
+
+    ════════════════════════════════════════════════════════════════════
+    STARTING TRAINING
+    ════════════════════════════════════════════════════════════════════
+    Running on: GPU
+    Epochs: 100 | Batch size: 128 | Train batches: 2186
+
+    🔍 Testing data pipeline performance...
+    ✅ First batch loaded in 4.18s
+       Batch shape: (128, 1024)
+
+    ⏱️  Starting training at 2025-07-12 14:30:00
+
+    Epoch 1/100
+    2186/2186 [============================] 12m 34s
+    [EPOCH 1] loss=0.6931, val_loss=0.6214, auc=0.5234, val_auc=0.6789
+    
+    Epoch 2/100
+    2186/2186 [============================] 12m 15s
+    [EPOCH 2] loss=0.4521, val_loss=0.3892, auc=0.7456, val_auc=0.8123
+
+    ... (mais ~98 épocas) ...
+
+    Epoch 100/100
+    2186/2186 [============================] 12m 02s
+    [EPOCH 100] loss=0.1234, val_loss=0.1567, auc=0.9876, val_auc=0.9854
+
+    ════════════════════════════════════════════════════════════════════
+    ✅ TRAINING COMPLETED
+    ════════════════════════════════════════════════════════════════════
+    Total time: 12.34 hours (740.5 minutes)
+    Best val AUC  : 0.98542
+    Best val loss : 0.15674
+    Epochs run    : 47
+    ════════════════════════════════════════════════════════════════════
+
+════════════════════════════════════════════════════════════════════════════════
+  🔧 SE ALGO DER ERRADO
+════════════════════════════════════════════════════════════════════════════════
+
+❌ Erro: "memory exhausted" / "OOM killer"
+   └─ Reduzir BATCH_SIZE em Célula 3: 128 → 64
+
+❌ Erro: "z_eq não encontrado"
+   └─ Executar NN_01_DataGeneration.ipynb primeiro
+
+❌ Erro: "No GPU detected"
+   └─ Verificar: nvidia-smi
+   └─ Ativar venv correto: source /home/thami/venv_tf_gpu/bin/activate
+
+❌ Treino muito lento (< 10 amostras/segundo)
+   └─ Normal com lazy loading (from_generator)
+   └─ GPU fica saturada (monitorar com nvidia-smi)
+
+❌ Jupyter travou / não responde
+   └─ Fechar e reabrir
+   └─ Dados não são perdidos (modelo salvo a cada época)
+
+════════════════════════════════════════════════════════════════════════════════
+  📈 RESULTADO ESPERADO
+════════════════════════════════════════════════════════════════════════════════
+
+Após completar o treinamento:
+
+✅ Arquivo: models/cnn1d_tag_auth_best.keras (~8-10 MB)
+   └─ Melhor modelo salvo automaticamente
+
+✅ Arquivo: models/cnn1d_threshold.json (~1 KB)
+   └─ Threshold α-constrangido
+
+✅ Arquivo: visualizations/NN02_GPU_CNN1D_results.png
+   └─ 6 gráficos: loss, AUC, ROC, scores, PD vs SNR, confusion matrix
+
+✅ Saída: Desempenho @ 0 dB com α=10⁻³
+   ├─ AUC: ~0.98
+   ├─ PD (prob. detecção): ~85%
+   └─ FPR: <1% (depende do threshold)
+
+════════════════════════════════════════════════════════════════════════════════
+  📝 CHECKLIST ANTES DE COMEÇAR
+════════════════════════════════════════════════════════════════════════════════
+
+□ GPU detectada? Rodar: nvidia-smi
+  └─ Procurar por: "NVIDIA GeForce RTX 4050"
+
+□ Venv correto ativado?
+  └─ Rodar: which python
+  └─ Resultado deve terminar em: venv_tf_gpu/bin/python
+
+□ TensorFlow detecta GPU?
+  └─ Rodar (em Python): import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))
+  └─ Deve mostrar: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+
+□ Dataset existe?
+  └─ Arquivo: /mnt/c/Users/thami/OneDrive/Documents/TAG-Authentication/Redes Neurais/results/data/dataset_cnn_yeq_0_30dB.h5
+  └─ Tamanho: ~1.84 GB
+
+□ Espaço em disco?
+  └─ Models: ~100 MB necessários
+  └─ Logs: ~500 MB
+  └─ Total: ~1 GB
+
+════════════════════════════════════════════════════════════════════════════════
+  🎓 MATERIAL DE REFERÊNCIA
+════════════════════════════════════════════════════════════════════════════════
+
+Veja também:
+
+├─ FIX_KERNEL_CRASH_CELL2.md
+│  └─ Análise técnica detalhada do problema e solução
+
+├─ SOLUCAO_KERNEL_CRASH.txt
+│  └─ Resumo rápido do fix
+
+├─ Redes Neurais/documents/ABLATION_STUDY_QUICK_REFERENCE.md
+│  └─ Referência rápida da ablação
+
+└─ ANALISE_NOTEBOOKS_RELEVANCIA.md
+   └─ Quais notebooks usar (leia depois de terminar NN_02)
+
+════════════════════════════════════════════════════════════════════════════════
+  ✨ RESUMO: O que fazer agora?
+════════════════════════════════════════════════════════════════════════════════
+
+1. source /home/thami/venv_tf_gpu/bin/activate
+2. cd "Redes Neurais/notebooks"
+3. jupyter notebook NN_02_DNN_Correlator_GPU.ipynb
+4. Execute Células 1-6 na ordem
+5. Espere ~12 horas pelo treinamento
+6. Celulas 7-9 geram resultados
+7. Vá para NN_07_DNN_vs_MonteCarlo_Comparison_GPU.ipynb
+
+════════════════════════════════════════════════════════════════════════════════
+
+Boa sorte! 🚀

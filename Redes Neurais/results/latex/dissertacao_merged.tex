@@ -1,0 +1,271 @@
+%% ================================================================
+%% Dissertação de Mestrado — UFPE / Departamento de Eletrônica e Sistemas
+%% Autenticação na Camada Física com Tags Caóticas via Discriminador Neural
+%% Autor: Thamires Tavares | Orientadores: D. Chaves, C. Pimentel
+%%
+%% MERGED VERSION: dissertacao_comments.tex + dissertacao.tex
+%% Compilar:  pdflatex dissertacao_merged.tex  (ou lualatex)
+%% ================================================================
+\documentclass[12pt,a4paper]{article}
+\usepackage[brazil]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{microtype}
+\usepackage[table]{xcolor}
+\graphicspath{{figures/}}
+\onehalfspacing
+
+%% Comandos para comentários
+\newcommand{\bblue}[1]{\textcolor{blue}{#1}}
+\newcommand{\rred}[1]{\textcolor{red}{#1}}
+
+%% ================================================================
+
+\begin{document}
+
+\title{\textbf{Autenticação na Camada Física com Tags Caóticas\\via Discriminador Neural}\\[0.5em]
+\large Ablação das Entradas e Núcleo Mínimo em Canal Rayleigh}
+
+\author{Thamires Tavares\\[0.4em]
+\small Orientadores: Prof.\ Daniel P.\ B.\ Chaves e Prof.\ Cecílio J.\ L.\ Pimentel\\
+\small Departamento de Eletrônica e Sistemas --- UFPE, Recife\,--\,PE}
+
+\date{\textit{Versão de trabalho} --- Julho de 2026}
+
+\maketitle
+\thispagestyle{empty}
+
+\renewcommand{\abstractname}{Resumo}
+\begin{abstract}
+\noindent
+Este trabalho propõe um discriminador baseado em rede neural para autenticação em camada física com tags caóticas em canal Rayleigh. O método utiliza dois escalares por pacote autenticado (correlação entre tag legítima e fator de desvanecimento de canal), mantendo simplicidade computacional. Um estudo de ablação valida que este conjunto de características é mínimo e suficiente: qualquer informação adicional degrada o desempenho, confirmando que a rede neural captura a informação discriminatória essencial. Realiza-se validação estatística para garantir que os dados satisfazem premissas de independência e distribuição idêntica, permitindo aplicar o \textit{Data-Driven Detection Framework} (D3F) --- um método que constrói detectores ótimos a partir de dados, com garantia teórica de desempenho confiável usando menos simulações. A proposta apresenta resultados superiores a técnicas clássicas de clusterização como SVM. Resultados obtidos pelo discriminador proposto alcançam probabilidade de detecção mais de 10 vezes superior ao método clássico para SNRs abaixo de 5 dB.
+
+\end{abstract}
+
+\begin{keywords}
+Autenticação na camada física, discriminador neural, Data-Driven Detection Framework, DNN, canal Rayleigh, características mínimas, TAGs caóticas, estudo de ablação, CFAR, Neyman-Pearson.
+\end{keywords}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introdução}
+
+A autenticação de dispositivos em redes sem fio é requisito crítico de segurança, especialmente com a expansão de IoT, 5G/6G e sistemas veiculares autônomos~\cite{ref_xie}. Em comunicações V2X (\textit{Vehicle-to-Everything}), dispositivos devem ser autenticados em dezenas de milissegundos enquanto se deslocam a alta velocidade --- intervalo de tempo fundamentalmente incompatível com protocolos criptográficos convencionais que exigem múltiplas trocas de mensagens~\cite{ref_v2x_latency} \rred{conferir referencia}. Para contornar essa limitação, a autenticação em camada física (PLA, do inglês \textit{Physical Layer Authentication}) emerge como abordagem complementar~\cite{ref_poor, ref_yu} \rred{conferir yu em detalhes} que explora características intrínsecas do canal de comunicação, difíceis de reproduzir por adversários sem acesso a esse mesmo canal. Trabalhos pioneiros~\cite{ref_yu} \rred{conferir yu em detalhes}  formalizaram PLA como teste de hipótese baseado em características do canal, estabelecendo fundações teóricas para otimalidade de Neyman-Pearson em autenticação.
+
+PLA divide-se em duas estratégias: passiva, que extrai características naturais do canal (desvanecimento, informação de estado do canal) para verificar legitimidade, e ativa, que insere sequências de autenticação de baixa potência sob controle criptográfico do transmissor legítimo, garantindo que apenas receptores com a chave secreta possam detectá-las. Este trabalho foca em PLA ativa. Trabalhos anteriores em autenticação em camada física utilizaram códigos de autenticação baseados em funções hash criptográficas~\cite{ref_hash_pla, ref_ldpc_auth} \rred{conferir referencias de outras estrategias de autenticacao}, explorando a resposta de frequência do canal como desafio de autenticação. Diferenciando-se dessa abordagem, ~\cite{ref_joao} propuseram a geração de sequências de autenticação (TAGs) utilizando mapas caóticos unidimensionais em lugar de funções hash criptográficas, explorando as propriedades de perda de informação dos mapas da tenda para garantir o sigilo incondicional da autenticação. As TAGs caóticas combinam sigilo intrínseco com eficiência computacional e, conforme validado empiricamente, fornecem resistência natural a ataques de personificação em canais Rayleigh. Outros trabalhos ~\cite{ref_xie} \rred{referencia fora de ordem pra o artigo de 2021} aprofundaram a análise teórica do método, explorando particularmente o papel do ganho de canal estimado $\hat{h}$ como informação crítica para adaptação de limiar (princípio de taxa constante de falso alarme --- CFAR), mostrando seu impacto significativo em regimes de baixa razão sinal-ruído (SNR).
+
+Uma limitação fundamental dos detectores clássicos em PLA é que, em canais Rayleigh, o ganho variável de pacote a pacote altera significativamente a distribuição da estatística de decisão em regimes de baixo SNR, dificultando a discriminação confiável entre transmissor legítimo e invasor~\cite{ref_xie}. Redes neurais emergem como solução viável para essa limitação, pois podem aprender limiares adaptativos e relações não-lineares a partir dos dados, potencialmente superando as abordagens clássicas fixas. Embora redes neurais tenham sido exploradas em detectores para PLA, a maioria dos trabalhos utiliza arquiteturas por tentativa-e-erro sem fundamentação teórica rigorosa sobre quando e por que funcionam. Um survey recente~\cite{ref_survey_ml_pla} documenta dezenas de abordagens utilizando DNN, CNN, LSTM, RNN, Transformers, Clustering e Autoencoders, frequentemente sob diferentes tipos de canais \bblue{talvez adicionar referencia 43 do Braca et al; o texto discute redes neurais como black boxes}. Trabalhos posteriores~\cite{ref_wang_dnn_csi} propuseram CNN, RNN e CRNN para autenticação baseada em CSI, mostrando que CNNs extraem melhor características locais que redes densas. Uma comparação sistemática~\cite{ref_comparison_stat_ml} entre métodos estatísticos clássicos e ML mostrou que classificadores com uma classe alcançam menor taxa de falso negativo com pequena correlação espacial entre canais, enquanto métodos estatísticos são vantajosos com grande correlação. Clustering também foi aplicado a PLA via abordagem geométrica em sistemas edge computing~\cite{ref_clustering_pla}. Adicionalmente, biometric chaotic signatures e transformers para predição de CSI foram propostos para autenticação sob ataques de spoofing~\cite{ref_biometric_chaotic, ref_transformer_csi_pred}.
+
+\rred{Este trabalho diferencia-se ao aplicar o Data-Driven Detection Framework (D3F)~\cite{ref_braca} como fundamentação teórica rigorosa: a escolha de entropia cruzada binária (BCE) e validação das premissas IID não são heurísticas, mas consequências diretas de Large Deviations Theory, provendo convergência garantida ao teste ótimo de Neyman-Pearson. A maioria dos trabalhos da área não investigou sistematicamente o conjunto mínimo de características necessário, geralmente engenhando múltiplas features sem validar minimalidade ou estabelecer qual informação é verdadeiramente essencial versus redundante. Este trabalho propõe: (i) aplicação rigorosa de D3F ao PLA com TAGs caóticas em canal Rayleigh; (ii) validação que o par minimal de características $[|\tau|, \hat{h}]$ satisfaz premissas IID; (iii) comparação sob igualdade de condições entre redes neurais (DNN, CNN), SVM linear e métodos clássicos (mesmas características, mesmo treinamento), permitindo isolar o ganho da adaptação de limiar dinâmico; (iv) estudo sistemático de ablação demonstra que informação adicional degrada desempenho, validando minimalidade; (v) scoping claro das conclusões a canal Rayleigh estacionário com identificação de quando redes neurais voltam a ser essenciais em cenários V2X com fading Rician, não-estacionário e correlação temporal.}
+
+\section{Fundamentação Teórica}
+
+\subsection{Modelo do Canal e Sinais}
+
+Considera-se um cenário com transmissor legítimo (Alice), receptor (Bob) e atacante (Eve) em canal com desvanecimento plano e lento de Rayleigh~\cite{ref_poor}. No $i$-ésimo intervalo de sinalização, Alice transmite $\mathbf{x}^i = \rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i$, onde $\mathbf{s}^i \in \{-1,+1\}^L$ é mensagem BPSK de $L$ símbolos e $\mathbf{t}^i$ é a tag caótica. Os parâmetros $\rho_s$ e $\rho_t$ distribuem energia entre mensagem e tag, satisfazendo $\rho_s^2 + \rho_t^2\,\mathbb{E}[(t_k^i)^2] = 1$ para manter potência transmitida unitária~\cite{ref_joao}.
+
+O sinal recebido em Bob é $\mathbf{y}^i = h^i(\rho_s \mathbf{s}^i + \rho_t \mathbf{t}^i) + \mathbf{w}^i$, onde o ganho $h^i$ (constante dentro de um pacote, variável entre pacotes) segue distribuição Rayleigh normalizada $\mathbb{E}[(h^i)^2]=1$, e $\mathbf{w}^i \sim \mathcal{N}(\mathbf{0}, \sigma_w^2\mathbf{I})$ é ruído AWGN. Bob estima $h^i$ pelo método de mínimos quadrados utilizando os $L$ símbolos conhecidos: $\hat{h}^i = (\mathbf{s}^i)^\top \mathbf{y}^i/(L\rho_s)$. O erro de estimação possui variância $\sigma_e^2 = \sigma_w^2/(L\rho_s^2)$~\cite{ref_kay}. Em regime de SNR nominal elevado, $\sigma_e \ll 1$, justificando a aproximação de CSI perfeito utilizada neste trabalho --- uma hipótese validável por simulação com CSI prático em futuro refinamento.
+
+\subsection{Geração de Tags Caóticas}
+
+A tag $\mathbf{t}^i$ é gerada iterativamente pelo mapa da tenda, com condição inicial $x_0$ derivada criptograficamente da mensagem e de uma chave secreta compartilhada entre Alice e Bob. Especificamente, $x_0 = (\oplus_\ell (s_\ell^i \land k_\ell)) \bmod 1$, onde $\oplus$ denota XOR lógico entre bits de mensagem $s_\ell^i \in \{0,1\}$ (convertidos de $\{-1,+1\}$) e chave $k_\ell \in \{0,1\}$~\cite{ref_joao}. O mapa é:
+\begin{equation}\label{eq:tentmap}
+    f(x) = \begin{cases} 2x+1, & x \in [-1,0) \\ 1-2x, & x \in [0,1] \end{cases}
+\end{equation}
+As iteradas sucessivas $t_k^i = f^{(k)}(x_0)$ formam a sequência caótica. A distribuição de equilibrium do mapa da tenda sobre $[-1,1]$ é uniforme, logo $\mathbb{E}[(t_k^i)^2] = 1/3$~\cite{ref_poor}. A alta autocorrelação e baixa correlação cruzada com diferentes condições iniciais garantem que Bob (com acesso à chave) detecte a tag de Alice, mas não a de Eve (com chave diferente), provendo resistência a ataques de personificação~\cite{ref_joao}.
+
+\subsection{Teste de Hipótese para Autenticação}\label{sec:hip}
+
+O problema de discriminar Alice (transmissor legítimo) de Eve (intruso) é modelado como teste de hipótese binária~\cite{ref_poor}: $H_0$ (ausência de tag legítima, Eve transmite) versus $H_1$ (tag presente, Alice transmite). A estatística de decisão é o correlator casado com a tag de referência, normalizado pelo ganho de canal estimado~\cite{ref_xie}:
+\begin{equation}\label{eq:tau}
+    \tau^i = \left(\frac{\mathbf{y}^i}{h^i} - \rho_s \mathbf{s}^i\right) \cdot \frac{\mathbf{t}^{\mathrm{ref}}}{\rho_t},
+\end{equation}
+A distribuição de $\tau^i$ em ambas hipóteses é gaussiana pelo Teorema Central do Limite (com $L \gg 1$):
+\begin{align}
+    \tau^i \mid H_0 &\sim \mathcal{N}\!\left(0,\; \sigma_{v^i}^2\right),\quad
+    \tau^i \mid H_1 \sim \mathcal{N}\!\left(\mu_{t}^i,\; \sigma_{v^i}^2\right). \label{eq:dists}
+\end{align}
+
+\subsection{Limite de Otimalidade de Neyman-Pearson e o Papel do CFAR Adaptativo}\label{sec:np_limit}
+
+Pelo lema de Neyman-Pearson~\cite{ref_poor}, o teste de razão de verossimilhança (LRT) construído a partir de $\tau^i$ na Equação~\eqref{eq:tau} é o detector ótimo --- no sentido de maximizar $P_D$ para qualquer $P_{FA}$ fixa --- \emph{desde que o ganho de canal instantâneo $h^i$ seja conhecido ou perfeitamente estimado e utilizado na normalização do próprio $\tau^i$}. Sob essa condição, nenhum classificador, incluindo redes neurais de qualquer arquitetura, pode produzir $P_D$ estritamente maior que o correlador na mesma $P_{FA}$: trata-se de um limite teórico, não de uma limitação de implementação.
+
+Esse resultado exige uma leitura cuidadosa dos ganhos observados neste trabalho, particularmente do núcleo mínimo $[|\tau|,\hat{h}]$, que atinge $84{,}7\%$ de detecção a $0$~dB frente a apenas $8{,}1\%$ do correlador clássico de referência (Tabela~\ref{tab:zeq_ablation}). A superioridade aparente não viola o lema de Neyman-Pearson porque as duas estatísticas comparadas não resolvem exatamente o mesmo teste de hipótese. O correlador clássico de referência, conforme tipicamente implementado e comparado na literatura~\cite{ref_xie}, calibra um limiar único e fixo por faixa de SNR nominal, obtido a partir da média/agregado das amostras daquela faixa --- e não da realização instantânea $h^i$ de cada pacote. Como $h^i$ segue distribuição de Rayleigh e varia livremente dentro de uma mesma faixa nominal de SNR, esse procedimento resolve, na prática, um teste de hipótese simples sob um canal médio ou nominal, e não o teste de hipótese composto real, em que $h^i$ é um parâmetro de perturbação (\textit{nuisance parameter}) aleatório e desconhecido a cada pacote.
+
+A rede neural que recebe $\hat{h}^i$ como entrada auxiliar, por sua vez, pode aprender uma fronteira de decisão condicionada ao valor instantâneo do canal --- aproximando-se, na prática, de um teste do tipo \textit{Generalized Likelihood Ratio Test} (GLRT) com adaptação CFAR por pacote. Esse teste é uma solução mais informada e melhor especificada para o problema composto e, por isso, pode superar a implementação de referência do correlador clássico sem violar a otimalidade de Neyman-Pearson: a rede não supera o detector ótimo do problema completo, ela supera uma implementação subótima que ignora informação instantânea de canal disponível. Um correlador clássico ``justo'', com limiar adaptado a $\hat{h}^i$ por amostra (um correlador CFAR análogo ao proposto por~\cite{ref_xie}), deveria recuperar paridade com a rede neural, e não inferioridade frente a ela --- consistente com o limite teórico estabelecido no parágrafo anterior.
+
+Essa distinção também explica os resultados da ablação $z_{eq}$ (Seção~\ref{sec:ablation_zeq}). Como o vetor $z_{eq}$ e a tag de referência $\text{tag}_{ref}$ contêm, em conjunto, toda a informação necessária para computar $\tau^i$ (um produto interno linear, computável por um único neurônio denso), o teto teórico de desempenho das Variantes A, B, C e E é exatamente a paridade com o correlador quando o canal é conhecido, e nunca sua superação. O desempenho substancialmente inferior observado nessas variantes em baixo SNR reflete, portanto, uma dificuldade prática de estimação estatística --- aprender a direção de correlação correta em um espaço de 1024 dimensões dominado por ruído a partir de dados finitos --- e não uma limitação fundamental de informação. A Variante D, ao fornecer $|\tau|$ já computado, elimina essa dificuldade de otimização e recupera o teto teórico esperado.
+
+Por fim, esse enquadramento delimita precisamente a contribuição pretendida deste trabalho. Em canais com estatística de ruído conhecida e gaussiana (o cenário Rayleigh avaliado até aqui), a rede neural pode, no máximo, igualar o correlador ótimo quando devidamente informada sobre o canal instantâneo --- e o ganho reportado decorre da comparação com uma referência clássica que não adapta seu limiar por pacote, e não de uma superação do limite de Neyman-Pearson. A vantagem genuína e duradoura de uma abordagem orientada a dados surge apenas em cenários nos quais a distribuição do ruído é desconhecida ou não-gaussiana --- por exemplo, o Cenário 3 do \textit{D3F}~\cite{ref_braca} --- onde não existe forma fechada para o LRT e o correlador clássico deixa de ser ótimo por depender de premissas paramétricas que não se sustentam. Nesse regime, o detector aprendido diretamente dos dados pode superar genuinamente qualquer heurística clássica, e não apenas equalizar uma implementação de referência subótima.
+
+\subsection{Auditoria de Paridade de Informação por Variante}\label{sec:info_audit}
+
+Para que a comparação entre o correlador clássico e os classificadores neurais seja interpretada corretamente, é necessário explicitar, para cada variante de entrada avaliada, se ela recebe exatamente a mesma informação usada pelo correlador clássico de referência (Equação~\eqref{eq:tau}, limiar fixo por faixa nominal de SNR) ou se recebe informação adicional que permite adaptação por pacote ao canal instantâneo. Classificamos cada variante em três categorias: \textbf{Ref.} (a própria referência clássica); \textbf{P} (paridade informacional estrita --- a rede recebe exatamente a estatística $|\tau|$, sem qualquer informação adicional de canal); \textbf{P+CI} (paridade nominal de conteúdo informacional, mas com canal instantâneo implicitamente acessível --- a rede recebe o vetor bruto $z_{eq}$ de 1024 amostras, cuja escala e energia amostral são estatisticamente informativas sobre $h^i$, ainda que $\hat{h}^i$ não seja fornecido como escalar explícito); e \textbf{S} (informação superior, explícita --- a rede recebe $\hat{h}^i$ e/ou a faixa nominal de SNR como entrada escalar direta, habilitando adaptação de limiar por pacote análoga a CFAR).
+
+A distinção entre P e P+CI é sutil, porém relevante, e decorre diretamente do pipeline de extração de características: no NN\_02b (Tabela~\ref{tab:tau_ablation}), a estimativa de canal $\hat{h}$ usada como entrada auxiliar é calculada como $\hat{h}^i = \mathrm{mean}(|\mathbf{y}_{eq}^i|)$, isto é, uma estatística de escala extraída do próprio vetor equalizado de 1024 amostras. Consequentemente, qualquer variante que receba $z_{eq}$ bruto (Variantes A, D e E do NN\_02c) tem, em princípio, acesso implícito à mesma informação de canal --- bastando à rede aprender a computar uma estatística de escala (por exemplo, a norma ou energia do vetor de entrada) já na primeira camada densa. Por essa razão, essas variantes são classificadas como P+CI, e não como P estrita: nenhuma delas é verdadeiramente "cega" ao canal instantâneo.
+
+\begin{table}[htb]
+\caption{\label{tab:tau_ablation}NN\_02b --- variantes de entrada baseadas em $\tau$, com classificação de paridade informacional frente ao clássico. $P_D$ (\%) sob $\alpha=10^{-7}$.}
+\begin{center}
+{\footnotesize
+\begin{tabular}{lcrrr}\toprule
+Variante & Info & 0~dB & 5~dB & 10~dB \\\midrule
+Clássico ($|\tau|$, limiar fixo por faixa) & Ref. & 8{,}1 & 58{,}7 & 99{,}9 \\\midrule
+V5: $\tau$ somente             & P & 0{,}0  & 99{,}0 & 100{,}0 \\
+V6: $\tau + \hat h$            & S & \textbf{84{,}7} & 99{,}6 & 100{,}0 \\
+V7: $\tau + \hat h + \overline{\text{SNR}}$ & S & 82{,}0 & 99{,}5 & 100{,}0 \\
+V8: $\tau + \hat h + E$        & S & 81{,}6 & 99{,}5 & 100{,}0 \\
+V1: $\tau + \hat h + \overline{\text{SNR}} + E$ & S & 83{,}7 & 99{,}4 & 100{,}0 \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
+\footnotesize\textit{Legenda}: Ref.\ = referência clássica; P = paridade informacional estrita (mesma informação do clássico, sem canal explícito); P+CI = paridade nominal, com canal instantâneo implicitamente acessível via escala de um vetor bruto de entrada; S = informação superior explícita ($\hat h$ e/ou SNR nominal como entrada direta, habilitando adaptação tipo CFAR). Todas as variantes atingem $P_D \approx 100\%$ para SNR $\geq 15$~dB.
+\end{table}
+
+A Variante V5 é a única comparação de paridade estrita (P) deste estudo: recebe exatamente $|\tau|$, a mesma estatística usada pelo correlador clássico, sem qualquer informação adicional de canal. Seu desempenho em 0~dB ($0{,}0\%$) não apenas não supera o clássico ($8{,}1\%$), como fica abaixo dele --- resultado consistente com o limite teórico da Seção~\ref{sec:np_limit}: sob informação estritamente equivalente, a rede neural não deveria superar o correlador clássico, e a diferença observada aqui reflete dificuldade de calibração do limiar aprendido sob restrição ultraestrita de falso alarme ($\alpha=10^{-7}$), não uma vantagem intrínseca do clássico. Já as Variantes V6, V7, V8 e V1, classificadas como S, superam o clássico já em $0$~dB por receberem $\hat h$ (e, em alguns casos, $\overline{\text{SNR}}$) como entrada explícita adicional --- exatamente o mecanismo de adaptação instantânea de limiar discutido na Seção~\ref{sec:np_limit}. Toda comparação numérica entre uma variante S e o clássico deve, portanto, ser lida como "rede com informação de canal explícita versus clássico sem adaptação de limiar", e não como uma superação do teto teórico de Neyman-Pearson.
+
+\subsection{Ablação z\_eq (NN\_02c)}\label{sec:ablation_zeq}
+
+O NN\_02c avaliou diretamente a suficiência do sinal residual de dimensão 1024. A Tabela~\ref{tab:zeq_ablation} sintetiza os resultados exportados em \texttt{nn02c\_ablation\_results.json}.
+
+\begin{table}[htb]
+\caption{\label{tab:zeq_ablation}NN\_02c --- variantes com $z_{eq}$ e entradas auxiliares. $P_D$ (\%) sob $\alpha=10^{-7}$, $L=1024$, Rayleigh.}
+\begin{center}
+{\footnotesize
+\begin{tabular}{lcrrrrrrr}\toprule
+Variante & Info & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB & 25~dB & 30~dB \\\midrule
+Clássico ($|\tau|$ analítico) & Ref. & 8{,}1 & 58{,}7 & 99{,}9 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\\midrule
+A: z\_eq somente             & P+CI & 0{,}4 & 0{,}1 & 0{,}0 & 86{,}2 & 100{,}0 & 100{,}0 & 100{,}0 \\
+B: z\_eq + h                 & S    & 0{,}2 & 0{,}1 & 0{,}0 & 88{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+C: z\_eq + h + SNR           & S    & 0{,}0 & 0{,}0 & 0{,}0 & 99{,}3 & 100{,}0 & 0{,}0 & 0{,}0 \\
+D: z\_eq + $|\tau|$          & P+CI & \textbf{88{,}3} & \textbf{99{,}7} & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+E: z\_eq - tag\_ref          & P+CI & 0{,}2 & 0{,}2 & 0{,}0 & 0{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
+\footnotesize\textit{Legenda}: ver Seção~\ref{sec:info_audit} e Tabela~\ref{tab:tau_ablation}. P+CI = paridade nominal, com canal instantâneo implicitamente acessível via escala do vetor bruto $z_{eq}$; S = informação superior explícita ($\hat h$ e/ou SNR nominal como entrada direta).
+\end{table}
+
+As variantes A e B confirmam limitação estrutural de entrada baseada apenas em $z_{eq}$ no regime de baixo SNR, com desempenho praticamente nulo entre 0 e 10 dB. A Variante D, ao incorporar explicitamente $|\tau|$, recupera imediatamente o regime de alta detecção desde 0 dB, o que reforça o papel da estatística de correlação explícita como mecanismo de integração coerente. A Variante E mostra que o resíduo explícito $z_{eq} - \text{tag}_{ref}$ não resolve o problema de forma robusta em baixo SNR: os resultados permanecem muito baixos em 0--15 dB e só voltam a níveis elevados em 20 dB ou acima. A Variante C apresentou comportamento inconsistente em 25 e 30 dB no arquivo exportado; por essa razão, sua interpretação deve ser tratada como evidência preliminar e sujeita a validação adicional. Conforme discutido na Seção~\ref{sec:np_limit}, o teto teórico de desempenho de A, B, C e E é a paridade com o correlador clássico sob canal conhecido, nunca sua superação; a diferença observada em baixo SNR é uma limitação prática de estimação estatística em alta dimensão, não uma limitação de informação disponível.
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\columnwidth]{NN_02c_D3F_PD_vs_SNR.png}
+    \caption{\label{fig:nn02c_pd_snr}NN\_02c: desempenho $P_D$ versus SNR das variantes A, B, C, D e E para entradas baseadas em $z_{eq}$.}
+\end{figure}
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\columnwidth]{NN_02c_ROC_AUC.png}
+    \caption{\label{fig:nn02c_roc_auc}NN\_02c: curvas ROC/AUC complementares para comparação da separabilidade entre hipóteses nas variantes de entrada.}
+\end{figure}
+
+\section{Conclusões}\label{sec:conclusions}
+
+Os resultados executados em NN\_02b, NN\_02c e NN\_07 confirmam três conclusões centrais. A primeira é que a representação de entrada domina o desempenho em baixo SNR. Modelos que recebem estatísticas de correlação explícitas e informação instantânea de canal superam de forma consistente a referência clássica em 0 dB. A segunda é que o núcleo $[|\tau|,\hat{h}]$ permanece o melhor compromisso entre desempenho, interpretabilidade e simplicidade, atingindo $84{,}7\%$ de detecção em 0 dB com dimensionalidade mínima. A terceira é que variantes baseadas em $z_{eq}$ somente exibem limitação estrutural em baixo SNR, e a inclusão explícita de $|\tau|$ restaura desempenho elevado, como observado na Variante D do NN\_02c.
+
+A consolidação no NN\_07 confirmou que os ganhos observados nos notebooks individuais não são artefatos locais de execução, mas refletem uma tendência estável do problema: integração coerente explícita e adaptação ao canal instantâneo são os dois fatores determinantes sob restrição ultraestrita de falso alarme ($\alpha=10^{-7}$). Esses resultados sustentam a formulação do detector orientado a dados no contexto de PLA com fading Rayleigh.
+
+Como próximos passos, o estudo pode ser estendido para cenários veiculares não estacionários, com dinâmica temporal e canais Rician, mantendo o mesmo protocolo de comparação justa entre variantes de entrada e classes de classificador. Esse avanço permitirá separar, com maior precisão, o que decorre da física do canal e o que decorre da capacidade de modelagem da arquitetura.
+
+\section*{Agradecimentos}
+Os autores agradecem ao Departamento de Eletrônica e Sistemas da Universidade Federal de Pernambuco pelo apoio na realização deste trabalho.
+
+\section*{Lista de Siglas}
+{\small
+\begin{tabular}{@{}p{1.9cm}p{5.9cm}@{}}
+\textbf{1D CNN}    & \textit{One-Dimensional Convolutional Neural Network} \\
+\textbf{AWGN}      & \textit{Additive White Gaussian Noise} \\
+\textbf{BCE}       & \textit{Binary Cross-Entropy} (Entropia Cruzada Binária) \\
+\textbf{BN}        & \textit{Batch Normalization} \\
+\textbf{BPSK}      & \textit{Binary Phase Shift Keying} \\
+\textbf{CFAR}      & \textit{Constant False Alarm Rate} (Taxa Constante de Falso Positivo) \\
+\textbf{CNN}       & \textit{Convolutional Neural Network} \\
+\textbf{CSI}       & \textit{Channel State Information} \\
+\textbf{D3F}       & \textit{Data-Driven Detection Framework}~\cite{ref_braca} \\
+\textbf{DNN}       & \textit{Deep Neural Network} \\
+\textbf{GAP}       & \textit{Global Average Pooling} \\
+\textbf{IoT}       & \textit{Internet of Things} \\
+\textbf{LOS}       & \textit{Line-of-Sight} \\
+\textbf{LRT}       & \textit{Likelihood Ratio Test} \\
+\textbf{MLE}       & \textit{Maximum Likelihood Estimation} \\
+$\boldsymbol{P_D}$ & Probabilidade de Detecção \\
+\textbf{PLA}       & \textit{Physical Layer Authentication} \\
+\textbf{ReLU}      & \textit{Rectified Linear Unit} \\
+\textbf{SNR}       & \textit{Signal-to-Noise Ratio} \\
+\textbf{SVM}       & \textit{Support Vector Machine} \\
+\textbf{TAG}       & Sequência de Autenticação \\
+\textbf{TCL}       & Teorema Central do Limite \\
+\textbf{V2X}       & \textit{Vehicle-to-Everything} \\
+\end{tabular}
+}
+
+\begin{thebibliography}{99}
+
+\bibitem{ref_sainath2015} T. N. Sainath, A. R. Mohamed, B. Kingsbury, e B. Ramabhadran, ``Convolutional, Recurrent, and Fully Connected Deep Neural Networks for Acoustic Modeling,'' em \textit{Proc.\ IEEE Int.\ Conf.\ Acoust.\ Speech Signal Process.\ (ICASSP)}, Vancouver, BC, Canadá, 2013, pp.~6645--6649.
+
+\bibitem{ref_oshea2017} T. J. O'Shea e J. Hoydis, ``An Introduction to Deep Learning for the Physical Layer,'' \textit{IEEE Trans.\ Cogn.\ Commun.\ Netw.}, v.~3, n.~4, pp.~563--575, 2017.
+
+\bibitem{ref_xie} H. Xie, W. Chen, e J. Ning, ``Security Model of Authentication at the Physical Layer and Performance Analysis over Fading Channels,'' \textit{IEEE Trans.\ Inf.\ Forensics Security}, v.~16, pp.~3945--3959, 2021.
+
+\bibitem{ref_v2x_latency} 3GPP, ``3GPP TS 22.186: Enhancement of 3GPP Support for Reliable Low-Latency Communications,'' Technical Specification, v.~17.1.0, 3rd Generation Partnership Project, 2022.
+
+\bibitem{ref_braca} P. Braca, S. Marano, V. Matta, e P. Willett, ``Statistical Hypothesis Testing Based on Machine Learning: Large Deviations Analysis,'' \textit{IEEE Open J.\ Signal Process.}, v.~3, pp.~464--484, 2022.
+
+\bibitem{ref_liao} L. Liao, O. Wijesinghe, J. Perez-Ramirez, A. Bhatt, B. Imtiaz, e K. Ding, ``Deep Learning for Wireless Communications,'' \textit{Sensors}, v.~19, n.~11, p.~2440, 2019.
+
+\bibitem{ref_joao} J. V. C. Evangelista, D. Moreno, D. P. B. Chaves e C. Pimentel, ``Tag Generation Using Chaotic Sequences for Physical-Layer Authentication,'' \textit{IEEE Access}, v.~11, pp.~73080--73087, 2023.
+
+\bibitem{ref_yu} P. L. Yu, J. S. Baras, e B. M. Sadler, ``Physical-Layer Authentication,'' \textit{IEEE Trans.\ Inf.\ Forensics Security}, v.~3, n.~1, pp.~38--51, 2008.
+
+\bibitem{ref_poor} H. V. Poor, \textit{An Introduction to Signal Detection and Estimation}, 2.~ed. Springer-Verlag, 1994.
+
+\bibitem{ref_hash_pla} ``A Physical-Layer Authentication Scheme Based on Hash Method,'' \textit{Journal of Electronics \& Information Technology}, v.~38, n.~5, pp.~1032--1039, 2016.
+
+\bibitem{ref_ldpc_auth} ``An LDPC Code Based Physical Layer Message Authentication Scheme with Perfect Security,'' \textit{IEEE Communications Letters}, v.~22, n.~5, pp.~954--957, 2018.
+
+\bibitem{ref_survey_ml_pla} ``A Survey of Machine Learning-based Physical-Layer Authentication in Wireless Communications,'' arXiv:2411.09906, 2024.
+
+\bibitem{ref_wang_dnn_csi} Q. Wang, H. Li, Z. Chen, D. Zhao, S. Ye, e J. Cai, ``Supervised and Semi-Supervised Deep Neural Networks for CSI-Based Authentication,'' arXiv:1807.09469, 2018.
+
+\bibitem{ref_comparison_stat_ml} ``Comparison of Statistical and Machine Learning Techniques for Physical Layer Authentication,'' arXiv:2001.06238, 2020.
+
+\bibitem{ref_clustering_pla} ``Clustering Based Physical-Layer Authentication in Edge Computing Systems with Asymmetric Resources,'' \textit{Sensors}, v.~19, n.~8, 2020.
+
+\bibitem{ref_biometric_chaotic} ``Physical Layer Authenticated Image Encryption for IoT Network Based on Biometric Chaotic Signature for MPFrFT OFDM System,'' \textit{Sensors}, v.~23, n.~18, p.~7843, 2023.
+
+\bibitem{ref_transformer_csi_pred} ``Channel Prediction-Based Physical Layer Authentication under Consecutive Spoofing Attacks,'' arXiv:2603.19962, 2026.
+
+\bibitem{ref_adam} D. P. Kingma e J. Ba, ``Adam: A Method for Stochastic Optimization,'' em \textit{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, San Diego, CA, EUA, 2015.
+
+\bibitem{ref_goodfellow} I. Goodfellow, Y. Bengio e A. Courville, \textit{Deep Learning}. MIT Press, 2016.
+
+\bibitem{ref_proakis} J. G. Proakis e D. G. Manolakis, \textit{Digital Signal Processing: Principles, Algorithms, and Applications}, 4.~ed. Pearson Prentice Hall, 2007.
+
+\bibitem{ref_3gpp} 3GPP, ``Study on Channel Model for Frequencies from 0.5 to 100 GHz,'' Technical Report TR 38.901, v.~17.0.0, 3rd Generation Partnership Project, 2022.
+
+\bibitem{ref_shlezinger} N. Shlezinger, N. Farsad, Y.~C. Eldar e A.~J. Goldsmith, ``Model-Based Machine Learning for Communications,'' arXiv:2101.04726, 2021.
+
+\bibitem{ref_veldhuis} R. Veldhuis e D. Zeng, ``On Neyman-Pearson Optimality of Binary Neural Net Classifiers,'' Tech.\ Rep., jun.\ 2021. DOI: 10.36227/techrxiv.14709930.v1.
+
+\bibitem{ref_kay} S. M. Kay, \textit{Fundamentals of Statistical Signal Processing, Vol.~I: Estimation Theory}. Prentice Hall, 1993.
+
+\bibitem{ref_raya} M. Raya e J.-P. Hubaux, ``Securing Vehicular Ad Hoc Networks,'' \textit{J. Comput. Secur.}, v.~15, n.~1, pp.~39--68, 2007.
+
+\bibitem{ref_digham} F. F. Digham, M.-S. Alouini e M. K. Simon, ``On the Energy Detection of Unknown Signals Over Fading Channels,'' \textit{IEEE Trans.\ Commun.}, v.~55, n.~1, pp.~21--24, Jan.\ 2007.
+
+\end{thebibliography}
+
+\end{document}

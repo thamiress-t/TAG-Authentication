@@ -1,0 +1,115 @@
+🚀 QUICK START — Acessando os Resultados
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 VISUALIZAR TUDO:
+   1. Abra: results_index.html (em um navegador)
+   2. Verá: Todos os 34 arquivos organizados por categoria
+   3. Status: ✓ Indica arquivo salvo e acessível
+
+📖 DOCUMENTAÇÃO:
+   • README.md ..................... Guia completo (121 linhas)
+   • EXECUTION_SUMMARY.txt ......... Resumo desta execução
+   • results_manifest.json ......... Índice estruturado (JSON)
+
+🧠 MODELOS TREINADOS:
+   
+   CNN 1D (GPU):
+   └─ Redes Neurais/results/models/cnn1d_tag_auth_best.keras
+      • Carregue: tf.keras.models.load_model('...')
+      • Métricas: cnn1d_threshold.json
+   
+   4-Feature DNN:
+   └─ Redes Neurais/results/models/model_dnn_4feat_aligned.keras
+      • Carregue: tf.keras.models.load_model('...')
+      • Scaler:   scaler_4feat_aligned.json
+
+📊 GRÁFICOS PRINCIPAIS:
+   
+   Resultados NN_02:
+   └─ Redes Neurais/results/visualizations/NN02_GPU_CNN1D_results.png
+   
+   Resultados NN_02b:
+   └─ Redes Neurais/results/visualizations/NN02b_4feat_aligned_results.png
+   
+   Comparação NN_08:
+   └─ Redes Neurais/results/visualizations/NN08_Architecture_Comparison.png
+   
+   PD vs SNR (GPU):
+   └─ Redes Neurais/results/visualizations/Figure2_PD_vs_SNR_GPU.png
+
+🗄️ DATASETS:
+   
+   Redes Neurais/results/data/
+   ├─ dataset_cnn_yeq_0_30dB.h5 ............ Dataset principal
+   ├─ dataset_nn_stratified_0_30dB.h5 .... Dataset estratificado
+   └─ dataset_nn_100k.h5 ................... Dataset 100K amostras
+
+📈 MÉTRICAS:
+   
+   CNN Threshold:
+   └─ Redes Neurais/results/models/cnn1d_threshold.json
+      • cnn_threshold: 0.9971
+      • alpha_target: 0.001
+      • auc: 0.8847
+      • pd_at_thr: 0.2438
+      • fpr_at_thr: 0.00109
+   
+   Arquitetura Comparison:
+   └─ Redes Neurais/results/data/nn08_architecture_comparison.json
+   
+   PD vs SNR:
+   └─ Redes Neurais/results/data/figure2_pd_vs_snr_gpu.json
+
+🔍 ARQUIVOS DE LOG:
+   
+   • execution_log_v2.txt ............... Log completo
+   • notebook_orchestrator_v2.py ....... Orquestrador
+   • monitor_progress.py ............... Monitor tempo real
+   • archive_results.py ................ Script de arquivamento
+
+═══════════════════════════════════════════════════════════════════════════════
+⚡ COMANDO RÁPIDO — Python:
+
+import tensorflow as tf
+import json
+import h5py
+
+# Carregar modelo
+model = tf.keras.models.load_model('Redes Neurais/results/models/cnn1d_tag_auth_best.keras')
+
+# Carregar threshold
+with open('Redes Neurais/results/models/cnn1d_threshold.json') as f:
+    config = json.load(f)
+    threshold = config['cnn_threshold']
+
+# Carregar dados
+with h5py.File('Redes Neurais/results/data/dataset_cnn_yeq_0_30dB.h5', 'r') as f:
+    X_test = f['test/y_eq'][:]
+    y_test = f['test/y'][:]
+
+# Fazer predição
+pred = model.predict(X_test)
+y_pred = (pred >= threshold).astype(int)
+
+print(f"Acurácia: {(y_pred.flatten() == y_test).mean():.4f}")
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 CHECKLIST DE ARQUIVOS:
+
+□ Modelos treinados ................... ✓ 3 arquivos (.keras, .h5)
+□ Thresholds & Métricas .............. ✓ 4 arquivos (.json)
+□ Datasets ........................... ✓ 3 arquivos (.h5)
+□ Visualizações ...................... ✓ 13+ arquivos (.png)
+□ Documentação ....................... ✓ 3 arquivos (HTML, JSON, MD)
+□ Logs de execução ................... ✓ 3 arquivos (.txt, .py)
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ STATUS: TODOS OS RESULTADOS SALVOS E DOCUMENTADOS
+
+Próximas ações:
+1. ✓ Abra results_index.html para visão geral
+2. ✓ Use os modelos para novos experimentos
+3. ✓ Analise os gráficos para insights
+4. ✓ Consulte README.md para detalhes
+
+═══════════════════════════════════════════════════════════════════════════════
