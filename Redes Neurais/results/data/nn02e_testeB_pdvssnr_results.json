@@ -1,0 +1,133 @@
+{
+  "alpha": 1e-07,
+  "q_inv": 5.199338,
+  "SNR_BINS": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    25,
+    30
+  ],
+  "snr_bin_halfwidth": 2.5,
+  "L_FIXED": 1024,
+  "n_bootstrap": 300,
+  "ci_percentiles": [
+    2.5,
+    97.5
+  ],
+  "pd_ceiling_tolerance": 0.05,
+  "best_val_auc": 0.572165,
+  "audit": {
+    "snr_center": 15,
+    "var_low_h": 7.450798988342285,
+    "var_high_h": 0.38802170753479004,
+    "ratio_low_over_high": 19.202014923095703
+  },
+  "methods": {
+    "network": "DNN Dense(256-128-64-1), logit output, D3F \u03b1=1e-7 binado por SNR",
+    "classico_fixo": "limiar \u00fanico global (calibrado em todo o H0 de val), sem adapta\u00e7\u00e3o a SNR/h",
+    "cfar_h_oracle": "D3F emp\u00edrico, binagem conjunta SNR \u00d7 quantil de h (oracle)"
+  },
+  "results": {
+    "0": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.024507192328183273,
+      "pd_cfar_oracle": 0.1582312200319659,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.014637719765583378,
+        0.05355620671283963
+      ],
+      "thr_network": 0.6484226084355758
+    },
+    "5": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.01270746887966805,
+      "pd_cfar_oracle": 0.4071576763485477,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.006347251037344398,
+        0.03296161825726139
+      ],
+      "thr_network": 1.1104294648709003
+    },
+    "10": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.006531678641410843,
+      "pd_cfar_oracle": 0.6832135858915741,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.001959503592423253,
+        0.021015676028739282
+      ],
+      "thr_network": 2.621805570396137
+    },
+    "15": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.004330708661417323,
+      "pd_cfar_oracle": 0.7858267716535433,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.001968503937007874,
+        0.00905511811023622
+      ],
+      "thr_network": 4.6969532916940455
+    },
+    "20": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.0004108463434675431,
+      "pd_cfar_oracle": 0.758011503697617,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.0004108463434675431,
+        0.0018590797041906234
+      ],
+      "thr_network": 4.054041001667032
+    },
+    "25": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.0,
+      "pd_cfar_oracle": 0.999194847020934,
+      "ci_network": [
+        0.0,
+        0.0
+      ],
+      "ci_classico_fixo": [
+        0.0,
+        0.00040257648953301127
+      ],
+      "thr_network": 2.331861456057079
+    },
+    "30": {
+      "pd_network": 0.0,
+      "pd_classico_fixo": 0.0,
+      "pd_cfar_oracle": 1.0,
+      "ci_network": [
+        0.0,
+        0.0016038492381716118
+      ],
+      "ci_classico_fixo": [
+        0.0,
+        0.0
+      ],
+      "thr_network": 0.8743170466197618
+    }
+  }
+}

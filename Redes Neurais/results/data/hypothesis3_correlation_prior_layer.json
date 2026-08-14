@@ -1,0 +1,31 @@
+{
+  "description": "Variante A (z_eq) com camada de correla\u00e7\u00e3o inicializada por tag_ref",
+  "epochs_run": 15,
+  "pd_d3f": {
+    "0": 0.0,
+    "5": 0.0,
+    "10": 0.00032658393207054214,
+    "15": 0.0,
+    "20": 0.0,
+    "25": 1.0,
+    "30": 1.0
+  },
+  "reference_variant_A_random_init": {
+    "0": 0.004,
+    "5": 0.001,
+    "10": 0.0,
+    "15": 0.862,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  },
+  "reference_variant_D_explicit_tau": {
+    "0": 0.883,
+    "5": 0.997,
+    "10": 1.0,
+    "15": 1.0,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  }
+}

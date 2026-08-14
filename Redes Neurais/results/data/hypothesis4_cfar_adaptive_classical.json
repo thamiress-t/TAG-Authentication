@@ -1,0 +1,31 @@
+{
+  "description": "Correlador classico com limiar condicionado a h instantaneo (janela deslizante em h) vs. limiar fixo por faixa nominal de SNR.",
+  "alpha": 1e-07,
+  "classical_fixed_threshold": {
+    "0": 0.39104954714970697,
+    "5": 0.8786307053941909,
+    "10": 1.0,
+    "15": 1.0,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  },
+  "classical_cfar_adaptive_h": {
+    "0": 0.8859882791688866,
+    "5": 0.958,
+    "10": 0.9913333333333333,
+    "15": 0.9988188976377953,
+    "20": 0.9995891536565324,
+    "25": 1.0,
+    "30": 1.0
+  },
+  "reference_V6_tau_h_nn02b": {
+    "0": 0.8466,
+    "5": 0.9956,
+    "10": 1.0,
+    "15": 1.0,
+    "20": 1.0,
+    "25": 1.0,
+    "30": 1.0
+  }
+}

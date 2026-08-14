@@ -108,6 +108,33 @@ Essa distinção também explica os resultados da ablação $z_{eq}$ (Seção~\r
 
 Por fim, esse enquadramento delimita precisamente a contribuição pretendida deste trabalho. Em canais com estatística de ruído conhecida e gaussiana (o cenário Rayleigh avaliado até aqui), a rede neural pode, no máximo, igualar o correlador ótimo quando devidamente informada sobre o canal instantâneo --- e o ganho reportado decorre da comparação com uma referência clássica que não adapta seu limiar por pacote, e não de uma superação do limite de Neyman-Pearson. A vantagem genuína e duradoura de uma abordagem orientada a dados surge apenas em cenários nos quais a distribuição do ruído é desconhecida ou não-gaussiana --- por exemplo, o Cenário 3 do \textit{D3F}~\cite{ref_braca} --- onde não existe forma fechada para o LRT e o correlador clássico deixa de ser ótimo por depender de premissas paramétricas que não se sustentam. Nesse regime, o detector aprendido diretamente dos dados pode superar genuinamente qualquer heurística clássica, e não apenas equalizar uma implementação de referência subótima.
 
+\subsection{Auditoria de Paridade de Informação por Variante}\label{sec:info_audit}
+
+Para que a comparação entre o correlador clássico e os classificadores neurais seja interpretada corretamente, é necessário explicitar, para cada variante de entrada avaliada, se ela recebe exatamente a mesma informação usada pelo correlador clássico de referência (Equação~\eqref{eq:tau}, limiar fixo por faixa nominal de SNR) ou se recebe informação adicional que permite adaptação por pacote ao canal instantâneo. Classificamos cada variante em três categorias: \textbf{Ref.} (a própria referência clássica); \textbf{P} (paridade informacional estrita --- a rede recebe exatamente a estatística $|\tau|$, sem qualquer informação adicional de canal); \textbf{P+CI} (paridade nominal de conteúdo informacional, mas com canal instantâneo implicitamente acessível --- a rede recebe o vetor bruto $z_{eq}$ de 1024 amostras, cuja escala e energia amostral são estatisticamente informativas sobre $h^i$, ainda que $\hat{h}^i$ não seja fornecido como escalar explícito); e \textbf{S} (informação superior, explícita --- a rede recebe $\hat{h}^i$ e/ou a faixa nominal de SNR como entrada escalar direta, habilitando adaptação de limiar por pacote análoga a CFAR).
+
+A distinção entre P e P+CI é sutil, porém relevante, e decorre diretamente do pipeline de extração de características: no NN\_02b (Tabela~\ref{tab:tau_ablation}), a estimativa de canal $\hat{h}$ usada como entrada auxiliar é calculada como $\hat{h}^i = \mathrm{mean}(|\mathbf{y}_{eq}^i|)$, isto é, uma estatística de escala extraída do próprio vetor equalizado de 1024 amostras. Consequentemente, qualquer variante que receba $z_{eq}$ bruto (Variantes A, D e E do NN\_02c) tem, em princípio, acesso implícito à mesma informação de canal --- bastando à rede aprender a computar uma estatística de escala (por exemplo, a norma ou energia do vetor de entrada) já na primeira camada densa. Por essa razão, essas variantes são classificadas como P+CI, e não como P estrita: nenhuma delas é verdadeiramente "cega" ao canal instantâneo.
+
+\begin{table}[htb]
+\caption{\label{tab:tau_ablation}NN\_02b --- variantes de entrada baseadas em $\tau$, com classificação de paridade informacional frente ao clássico. $P_D$ (\%) sob $\alpha=10^{-7}$.}
+\begin{center}
+{\footnotesize
+\begin{tabular}{lcrrr}\toprule
+Variante & Info & 0~dB & 5~dB & 10~dB \\\midrule
+Clássico ($|\tau|$, limiar fixo por faixa) & Ref. & 8{,}1 & 58{,}7 & 99{,}9 \\\midrule
+V5: $\tau$ somente             & P & 0{,}0  & 99{,}0 & 100{,}0 \\
+V6: $\tau + \hat h$            & S & \textbf{84{,}7} & 99{,}6 & 100{,}0 \\
+V7: $\tau + \hat h + \overline{\text{SNR}}$ & S & 82{,}0 & 99{,}5 & 100{,}0 \\
+V8: $\tau + \hat h + E$        & S & 81{,}6 & 99{,}5 & 100{,}0 \\
+V1: $\tau + \hat h + \overline{\text{SNR}} + E$ & S & 83{,}7 & 99{,}4 & 100{,}0 \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
+\footnotesize\textit{Legenda}: Ref.\ = referência clássica; P = paridade informacional estrita (mesma informação do clássico, sem canal explícito); P+CI = paridade nominal, com canal instantâneo implicitamente acessível via escala de um vetor bruto de entrada; S = informação superior explícita ($\hat h$ e/ou SNR nominal como entrada direta, habilitando adaptação tipo CFAR). Todas as variantes atingem $P_D \approx 100\%$ para SNR $\geq 15$~dB.
+\end{table}
+
+A Variante V5 é a única comparação de paridade estrita (P) deste estudo: recebe exatamente $|\tau|$, a mesma estatística usada pelo correlador clássico, sem qualquer informação adicional de canal. Seu desempenho em 0~dB ($0{,}0\%$) não apenas não supera o clássico ($8{,}1\%$), como fica abaixo dele --- resultado consistente com o limite teórico da Seção~\ref{sec:np_limit}: sob informação estritamente equivalente, a rede neural não deveria superar o correlador clássico, e a diferença observada aqui reflete dificuldade de calibração do limiar aprendido sob restrição ultraestrita de falso alarme ($\alpha=10^{-7}$), não uma vantagem intrínseca do clássico. Já as Variantes V6, V7, V8 e V1, classificadas como S, superam o clássico já em $0$~dB por receberem $\hat h$ (e, em alguns casos, $\overline{\text{SNR}}$) como entrada explícita adicional --- exatamente o mecanismo de adaptação instantânea de limiar discutido na Seção~\ref{sec:np_limit}. Toda comparação numérica entre uma variante S e o clássico deve, portanto, ser lida como "rede com informação de canal explícita versus clássico sem adaptação de limiar", e não como uma superação do teto teórico de Neyman-Pearson.
+
 \subsection{Ablação z\_eq (NN\_02c)}\label{sec:ablation_zeq}
 
 O NN\_02c avaliou diretamente a suficiência do sinal residual de dimensão 1024. A Tabela~\ref{tab:zeq_ablation} sintetiza os resultados exportados em \texttt{nn02c\_ablation\_results.json}.
@@ -116,18 +143,19 @@ O NN\_02c avaliou diretamente a suficiência do sinal residual de dimensão 1024
 \caption{\label{tab:zeq_ablation}NN\_02c --- variantes com $z_{eq}$ e entradas auxiliares. $P_D$ (\%) sob $\alpha=10^{-7}$, $L=1024$, Rayleigh.}
 \begin{center}
 {\footnotesize
-\begin{tabular}{lrrrrrrr}\toprule
-Variante & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB & 25~dB & 30~dB \\\midrule
-Clássico ($|\tau|$ analítico) & 8{,}1 & 58{,}7 & 99{,}9 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\\midrule
-A: z\_eq somente             & 0{,}4 & 0{,}1 & 0{,}0 & 86{,}2 & 100{,}0 & 100{,}0 & 100{,}0 \\
-B: z\_eq + h                 & 0{,}2 & 0{,}1 & 0{,}0 & 88{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
-C: z\_eq + h + SNR           & 0{,}0 & 0{,}0 & 0{,}0 & 99{,}3 & 100{,}0 & 0{,}0 & 0{,}0 \\
-D: z\_eq + $|\tau|$          & \textbf{88{,}3} & \textbf{99{,}7} & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
-E: z\_eq - tag\_ref          & 0{,}2 & 0{,}2 & 0{,}0 & 0{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+\begin{tabular}{lcrrrrrrr}\toprule
+Variante & Info & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB & 25~dB & 30~dB \\\midrule
+Clássico ($|\tau|$ analítico) & Ref. & 8{,}1 & 58{,}7 & 99{,}9 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\\midrule
+A: z\_eq somente             & P+CI & 0{,}4 & 0{,}1 & 0{,}0 & 86{,}2 & 100{,}0 & 100{,}0 & 100{,}0 \\
+B: z\_eq + h                 & S    & 0{,}2 & 0{,}1 & 0{,}0 & 88{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+C: z\_eq + h + SNR           & S    & 0{,}0 & 0{,}0 & 0{,}0 & 99{,}3 & 100{,}0 & 0{,}0 & 0{,}0 \\
+D: z\_eq + $|\tau|$          & P+CI & \textbf{88{,}3} & \textbf{99{,}7} & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+E: z\_eq - tag\_ref          & P+CI & 0{,}2 & 0{,}2 & 0{,}0 & 0{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
 \bottomrule
 \end{tabular}
 }
 \end{center}
+\footnotesize\textit{Legenda}: ver Seção~\ref{sec:info_audit} e Tabela~\ref{tab:tau_ablation}. P+CI = paridade nominal, com canal instantâneo implicitamente acessível via escala do vetor bruto $z_{eq}$; S = informação superior explícita ($\hat h$ e/ou SNR nominal como entrada direta).
 \end{table}
 
 As variantes A e B confirmam limitação estrutural de entrada baseada apenas em $z_{eq}$ no regime de baixo SNR, com desempenho praticamente nulo entre 0 e 10 dB. A Variante D, ao incorporar explicitamente $|\tau|$, recupera imediatamente o regime de alta detecção desde 0 dB, o que reforça o papel da estatística de correlação explícita como mecanismo de integração coerente. A Variante E mostra que o resíduo explícito $z_{eq} - \text{tag}_{ref}$ não resolve o problema de forma robusta em baixo SNR: os resultados permanecem muito baixos em 0--15 dB e só voltam a níveis elevados em 20 dB ou acima. A Variante C apresentou comportamento inconsistente em 25 e 30 dB no arquivo exportado; por essa razão, sua interpretação deve ser tratada como evidência preliminar e sujeita a validação adicional. Conforme discutido na Seção~\ref{sec:np_limit}, o teto teórico de desempenho de A, B, C e E é a paridade com o correlador clássico sob canal conhecido, nunca sua superação; a diferença observada em baixo SNR é uma limitação prática de estimação estatística em alta dimensão, não uma limitação de informação disponível.
