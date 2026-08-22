@@ -1,6 +1,6 @@
 {
-  "alpha": 1e-07,
-  "q_inv": 5.199338,
+  "alpha": 0.01,
+  "q_inv": 2.326348,
   "SNR_BINS": [
     0,
     5,
@@ -18,7 +18,7 @@
     97.5
   ],
   "pd_ceiling_tolerance": 0.05,
-  "best_val_auc": 0.572165,
+  "best_val_auc": 0.5688,
   "audit": {
     "snr_center": 15,
     "var_low_h": 7.450798988342285,
@@ -26,108 +26,108 @@
     "ratio_low_over_high": 19.202014923095703
   },
   "methods": {
-    "network": "DNN Dense(256-128-64-1), logit output, D3F \u03b1=1e-7 binado por SNR",
+    "network": "DNN Dense(256-128-64-1), logit output, D3F \u03b1=0.01 binado por SNR",
     "classico_fixo": "limiar \u00fanico global (calibrado em todo o H0 de val), sem adapta\u00e7\u00e3o a SNR/h",
     "cfar_h_oracle": "D3F emp\u00edrico, binagem conjunta SNR \u00d7 quantil de h (oracle)"
   },
   "results": {
     "0": {
-      "pd_network": 0.0,
-      "pd_classico_fixo": 0.024507192328183273,
-      "pd_cfar_oracle": 0.1582312200319659,
+      "pd_network": 0.002663825253063399,
+      "pd_classico_fixo": 0.5253063399041022,
+      "pd_cfar_oracle": 0.6030900372935536,
       "ci_network": [
         0.0,
-        0.0
+        0.006925945657964837
       ],
       "ci_classico_fixo": [
-        0.014637719765583378,
-        0.05355620671283963
+        0.32213638785295684,
+        0.7084310069259455
       ],
-      "thr_network": 0.6484226084355758
+      "thr_network": 0.38438002914822356
     },
     "5": {
       "pd_network": 0.0,
-      "pd_classico_fixo": 0.01270746887966805,
-      "pd_cfar_oracle": 0.4071576763485477,
+      "pd_classico_fixo": 0.54201244813278,
+      "pd_cfar_oracle": 0.7323651452282157,
       "ci_network": [
         0.0,
         0.0
       ],
       "ci_classico_fixo": [
-        0.006347251037344398,
-        0.03296161825726139
+        0.28924403526970954,
+        0.7899896265560166
       ],
-      "thr_network": 1.1104294648709003
+      "thr_network": 0.5355250434165684
     },
     "10": {
       "pd_network": 0.0,
-      "pd_classico_fixo": 0.006531678641410843,
-      "pd_cfar_oracle": 0.6832135858915741,
+      "pd_classico_fixo": 0.5467015022860875,
+      "pd_cfar_oracle": 0.7762900065316787,
       "ci_network": [
         0.0,
         0.0
       ],
       "ci_classico_fixo": [
-        0.001959503592423253,
-        0.021015676028739282
+        0.29392553886348793,
+        0.8494856303069881
       ],
-      "thr_network": 2.621805570396137
+      "thr_network": 0.9805505637341515
     },
     "15": {
       "pd_network": 0.0,
-      "pd_classico_fixo": 0.004330708661417323,
-      "pd_cfar_oracle": 0.7858267716535433,
+      "pd_classico_fixo": 0.5244094488188976,
+      "pd_cfar_oracle": 0.978740157480315,
       "ci_network": [
         0.0,
         0.0
       ],
       "ci_classico_fixo": [
-        0.001968503937007874,
-        0.00905511811023622
+        0.27950787401574806,
+        0.8624507874015748
       ],
-      "thr_network": 4.6969532916940455
+      "thr_network": 1.1997080536855973
     },
     "20": {
       "pd_network": 0.0,
-      "pd_classico_fixo": 0.0004108463434675431,
-      "pd_cfar_oracle": 0.758011503697617,
+      "pd_classico_fixo": 0.6175020542317173,
+      "pd_cfar_oracle": 0.9646672144617913,
       "ci_network": [
         0.0,
         0.0
       ],
       "ci_classico_fixo": [
-        0.0004108463434675431,
-        0.0018590797041906234
+        0.35605998356614627,
+        0.8878286770747739
       ],
-      "thr_network": 4.054041001667032
+      "thr_network": 0.5990558361478151
     },
     "25": {
-      "pd_network": 0.0,
-      "pd_classico_fixo": 0.0,
-      "pd_cfar_oracle": 0.999194847020934,
-      "ci_network": [
-        0.0,
-        0.0
-      ],
-      "ci_classico_fixo": [
-        0.0,
-        0.00040257648953301127
-      ],
-      "thr_network": 2.331861456057079
-    },
-    "30": {
-      "pd_network": 0.0,
-      "pd_classico_fixo": 0.0,
+      "pd_network": 0.09420289855072464,
+      "pd_classico_fixo": 0.5475040257648953,
       "pd_cfar_oracle": 1.0,
       "ci_network": [
-        0.0,
-        0.0016038492381716118
+        0.08816425120772947,
+        0.10507246376811594
       ],
       "ci_classico_fixo": [
-        0.0,
-        0.0
+        0.3761372785829308,
+        0.8979066022544282
       ],
-      "thr_network": 0.8743170466197618
+      "thr_network": -0.19837478333987257
+    },
+    "30": {
+      "pd_network": 0.08420208500400962,
+      "pd_classico_fixo": 0.31676022453889335,
+      "pd_cfar_oracle": 1.0,
+      "ci_network": [
+        0.061748195669607056,
+        0.10665597433841219
+      ],
+      "ci_classico_fixo": [
+        0.1884522854851644,
+        0.7577586206896548
+      ],
+      "thr_network": -0.7106729739822992
     }
   }
 }
