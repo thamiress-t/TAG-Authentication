@@ -96,17 +96,114 @@ A distribuição de $\tau^i$ em ambas hipóteses é gaussiana pelo Teorema Centr
     \tau^i \mid H_1 \sim \mathcal{N}\!\left(\mu_{t}^i,\; \sigma_{v^i}^2\right). \label{eq:dists}
 \end{align}
 
-\subsection{Limite de Otimalidade de Neyman-Pearson e o Papel do CFAR Adaptativo}\label{sec:np_limit}
+\subsection{Limiar teórico para a TAG caótica e limite de Neyman--Pearson}\label{sec:np_limit}
 
-Pelo lema de Neyman-Pearson~\cite{ref_poor}, o teste de razão de verossimilhança (LRT) construído a partir de $\tau^i$ na Equação~\eqref{eq:tau} é o detector ótimo --- no sentido de maximizar $P_D$ para qualquer $P_{FA}$ fixa --- \emph{desde que o ganho de canal instantâneo $h^i$ seja conhecido ou perfeitamente estimado e utilizado na normalização do próprio $\tau^i$}. Sob essa condição, nenhum classificador, incluindo redes neurais de qualquer arquitetura, pode produzir $P_D$ estritamente maior que o correlador na mesma $P_{FA}$: trata-se de um limite teórico, não de uma limitação de implementação.
+O limiar usado como referência analítica neste trabalho é obtido a partir da mesma derivação de Xie et al.~\cite{ref_xie}, mas com a energia da TAG efetivamente gerada pelo mapa da tenda. Essa adaptação é necessária porque Xie normaliza a energia da sequência para $1$, enquanto a TAG deste trabalho satisfaz, após a normalização usada no \textit{nn01},
+\begin{equation}
+    \mathbb{E}[t_k^2]=\sigma_t^2\simeq\frac{1}{3}.
+    \label{eq:tag_energy}
+\end{equation}
+Definimos, portanto, a energia efetiva da sequência por
+\begin{equation}
+    L_{\mathrm{eff}}=L\sigma_t^2\simeq\frac{L}{3}.
+    \label{eq:leff}
+\end{equation}
+Essa é a única alteração estrutural em relação ao caso de Xie: onde a derivação original usa $L$, a nossa TAG usa $L_{\mathrm{eff}}$; além disso, $\rho_t$ deve ser o coeficiente de potência do nosso modelo, determinado por $\rho_s^2+\rho_t^2\sigma_t^2=1$.
 
-Esse resultado exige uma leitura cuidadosa dos ganhos observados neste trabalho, particularmente do núcleo mínimo $[|\tau|,\hat{h}]$, que atinge $84{,}7\%$ de detecção a $0$~dB frente a apenas $8{,}1\%$ do correlador clássico de referência (Tabela~\ref{tab:zeq_ablation}). A superioridade aparente não viola o lema de Neyman-Pearson porque as duas estatísticas comparadas não resolvem exatamente o mesmo teste de hipótese. O correlador clássico de referência, conforme tipicamente implementado e comparado na literatura~\cite{ref_xie}, calibra um limiar único e fixo por faixa de SNR nominal, obtido a partir da média/agregado das amostras daquela faixa --- e não da realização instantânea $h^i$ de cada pacote. Como $h^i$ segue distribuição de Rayleigh e varia livremente dentro de uma mesma faixa nominal de SNR, esse procedimento resolve, na prática, um teste de hipótese simples sob um canal médio ou nominal, e não o teste de hipótese composto real, em que $h^i$ é um parâmetro de perturbação (\textit{nuisance parameter}) aleatório e desconhecido a cada pacote.
+Para tornar a origem do limiar explícita, seja $\gamma_{\mathrm{Bob}}=10^{\mathrm{SNR}_{\mathrm{dB}}/10}$ a SNR média no receptor e seja $u$ um limiar aplicado à estatística de correlação. Condicionado ao ganho instantâneo $h$, a aproximação gaussiana empregada por Xie pode ser escrita como
+\begin{align}
+    \tau\mid H_0,h &\sim \mathcal{N}\!\left(0,
+    \frac{L_{\mathrm{eff}}}{2\rho_t^2\gamma_{\mathrm{Bob}}h^2}\right),\\
+    \tau\mid H_1,h &\sim \mathcal{N}\!\left(L_{\mathrm{eff}},
+    \frac{L_{\mathrm{eff}}}{2\rho_t^2\gamma_{\mathrm{Bob}}h^2}\right).
+    \label{eq:tau_cond_h}
+\end{align}
+O fator $2$ decorre da variância da parte real da estatística complexa usada na derivação: $\operatorname{Var}(\operatorname{Re}\{Z\})=\operatorname{Var}(Z)/2$. Como $h^2$ tem distribuição exponencial de média unitária no canal Rayleigh normalizado, a média sobre o desvanecimento fornece
+\begin{equation}
+ P_{FA}(u)=\mathbb{E}_{h^2}\!\left[
+ Q\!\left(\sqrt{\frac{2u^2\rho_t^2\gamma_{\mathrm{Bob}}h^2}{L_{\mathrm{eff}}}}\right)\right].
+ \label{eq:pfa_rayleigh}
+\end{equation}
+Impondo $P_{FA}(u_0)=\alpha$ e invertendo essa expressão, resulta o limiar teórico Rayleigh--médio usado no \textit{nn02c}:
+\begin{equation}
+    u_0=\sqrt{\frac{L_{\mathrm{eff}}(1-2\alpha)^2}
+    {4\rho_t^2\gamma_{\mathrm{Bob}}\alpha(1-\alpha)}}.
+    \label{eq:limiar_tag}
+\end{equation}
+Em particular, para a TAG deste trabalho, $L_{\mathrm{eff}}=L/3$, $\rho_t=\sqrt{3(1-\rho_s^2)}$ e $\gamma_{\mathrm{Bob}}=10^{\mathrm{SNR}_{\mathrm{dB}}/10}$. A Equação~\eqref{eq:limiar_tag} é um limiar para a estatística escalar do correlator; ela não é o limiar da saída sigmoidal da DNN.
 
-A rede neural que recebe $\hat{h}^i$ como entrada auxiliar, por sua vez, pode aprender uma fronteira de decisão condicionada ao valor instantâneo do canal --- aproximando-se, na prática, de um teste do tipo \textit{Generalized Likelihood Ratio Test} (GLRT) com adaptação CFAR por pacote. Esse teste é uma solução mais informada e melhor especificada para o problema composto e, por isso, pode superar a implementação de referência do correlador clássico sem violar a otimalidade de Neyman-Pearson: a rede não supera o detector ótimo do problema completo, ela supera uma implementação subótima que ignora informação instantânea de canal disponível. Um correlador clássico ``justo'', com limiar adaptado a $\hat{h}^i$ por amostra (um correlador CFAR análogo ao proposto por~\cite{ref_xie}), deveria recuperar paridade com a rede neural, e não inferioridade frente a ela --- consistente com o limite teórico estabelecido no parágrafo anterior.
+O mesmo procedimento fornece o $P_D$ teórico. Definindo $d=u_0-L_{\mathrm{eff}}$ e usando $P_D=1-P(\tau<u_0\mid H_1)$, obtém-se
+\begin{equation}
+ P_D^{\mathrm{teo}}=\frac{1}{2}\left[1-\operatorname{sgn}(d)
+ \sqrt{\frac{d^2\rho_t^2\gamma_{\mathrm{Bob}}}
+ {L_{\mathrm{eff}}+d^2\rho_t^2\gamma_{\mathrm{Bob}}}}\right].
+ \label{eq:pd_teorico_tag}
+\end{equation}
+Quando $u_0<L_{\mathrm{eff}}$, o termo $\operatorname{sgn}(d)$ torna a probabilidade de detecção maior que $1/2$, como esperado; quando o limiar fica acima da média sob $H_1$, a detecção diminui. No código do \textit{nn02c}, as Equações~\eqref{eq:limiar_tag} e~\eqref{eq:pd_teorico_tag} são implementadas pela função \texttt{xie\_closed\_form\_rayleigh}, chamada com $\sigma_t^2=1/3$, $\alpha=0{,}01$, o $L_{\mathrm{FIXED}}$ armazenado no dataset e o $\rho_t$ armazenado no mesmo arquivo.
 
-Essa distinção também explica os resultados da ablação $z_{eq}$ (Seção~\ref{sec:ablation_zeq}). Como o vetor $z_{eq}$ e a tag de referência $\text{tag}_{ref}$ contêm, em conjunto, toda a informação necessária para computar $\tau^i$ (um produto interno linear, computável por um único neurônio denso), o teto teórico de desempenho das Variantes A, B, C e E é exatamente a paridade com o correlador quando o canal é conhecido, e nunca sua superação. O desempenho substancialmente inferior observado nessas variantes em baixo SNR reflete, portanto, uma dificuldade prática de estimação estatística --- aprender a direção de correlação correta em um espaço de 1024 dimensões dominado por ruído a partir de dados finitos --- e não uma limitação fundamental de informação. A Variante D, ao fornecer $|\tau|$ já computado, elimina essa dificuldade de otimização e recupera o teto teórico esperado.
+Pelo lema de Neyman--Pearson~\cite{ref_poor}, o LRT é ótimo para uma distribuição completamente especificada e uma taxa $P_{FA}$ fixa. Isso não significa, porém, que qualquer número desenhado como ``clássico'' seja automaticamente esse limite. O correlator com $\tau$ ou $|\tau|$ contém a informação suficiente para atingir o limite sob as hipóteses do modelo, mas seu desempenho depende de como o limiar é calibrado, de o canal instantâneo ser conhecido e de a estatística real seguir a aproximação gaussiana usada na derivação.
 
-Por fim, esse enquadramento delimita precisamente a contribuição pretendida deste trabalho. Em canais com estatística de ruído conhecida e gaussiana (o cenário Rayleigh avaliado até aqui), a rede neural pode, no máximo, igualar o correlador ótimo quando devidamente informada sobre o canal instantâneo --- e o ganho reportado decorre da comparação com uma referência clássica que não adapta seu limiar por pacote, e não de uma superação do limite de Neyman-Pearson. A vantagem genuína e duradoura de uma abordagem orientada a dados surge apenas em cenários nos quais a distribuição do ruído é desconhecida ou não-gaussiana --- por exemplo, o Cenário 3 do \textit{D3F}~\cite{ref_braca} --- onde não existe forma fechada para o LRT e o correlador clássico deixa de ser ótimo por depender de premissas paramétricas que não se sustentam. Nesse regime, o detector aprendido diretamente dos dados pode superar genuinamente qualquer heurística clássica, e não apenas equalizar uma implementação de referência subótima.
+\subsection{Como $P_D$ é obtido: teoria, simulação e DNN}\label{sec:pd_comparison}
+
+As quatro quantidades chamadas de probabilidade de detecção no estudo têm naturezas diferentes. Separá-las é essencial para interpretar corretamente a Figura~\ref{fig:nn02c_pd_snr}.
+
+\paragraph{(a) $P_D$ teórico.}
+O valor $P_D^{\mathrm{teo}}$ da Equação~\eqref{eq:pd_teorico_tag} é uma probabilidade calculada por integração analítica. Parte-se de uma distribuição gaussiana condicional ao ganho $h$, aplica-se o limiar $u_0$ escolhido para que o falso positivo médio sobre o fading seja $\alpha$, e depois integra-se sobre a distribuição Rayleigh de $h$. Não há amostras de treino ou teste nessa curva. Ela é uma previsão do modelo ideal, com tag de energia média $1/3$, comprimento $L$ fixo, ruído gaussiano e canal Rayleigh normalizado.
+
+\paragraph{(b) $P_D$ simulado.}
+Na validação Monte Carlo do \textit{nn01}, são geradas TAGs e ganhos Rayleigh independentes. Para cada realização, amostra-se uma estatística gaussiana com média $0$ sob $H_0$ ou média $t_2=\sum_k t_k^2$ sob $H_1$, e variância condicionada a $h^2$. Com o mesmo limiar $u_0$, calculam-se
+\begin{align}
+    \widehat{P}_{FA}^{\mathrm{MC}}&=\frac{1}{N_0}
+    \sum_{i=1}^{N_0}\mathbf{1}\{\tau_{0,i}\geq u_0\},\\
+    \widehat{P}_{D}^{\mathrm{MC}}&=\frac{1}{N_1}
+    \sum_{i=1}^{N_1}\mathbf{1}\{\tau_{1,i}\geq u_0\}.
+    \label{eq:pd_mc}
+\end{align}
+O Monte Carlo testa a implementação e as hipóteses estatísticas da fórmula, mas possui erro amostral e, na validação do \textit{nn01}, usa $t_2$ médio para determinar o limiar. Portanto, uma pequena diferença em relação a $P_D^{\mathrm{teo}}$ é esperada; uma diferença sistemática aponta para comprimento variável, energia finita da TAG, normalização, convenção de SNR ou outro desvio do modelo.
+
+\paragraph{(c) $P_D$ empírico do correlator no \textit{nn02c}.}
+No gráfico principal, a série ``correlador clássico (empírico, D3F threshold)'' não é a curva fechada de Xie. Para cada bin de SNR, o notebook estima no conjunto de validação sob $H_0$ a média e o desvio-padrão de $|\tau|$ e define
+\begin{equation}
+    \widehat{u}_{\mathrm{D3F},b}=\widehat{\mu}_{0,b}
+    +\Phi^{-1}(1-\alpha)\widehat{\sigma}_{0,b},
+    \qquad \Phi^{-1}(1-\alpha)=2{,}3263\quad(\alpha=0{,}01).
+    \label{eq:threshold_classical_d3f}
+\end{equation}
+O ponto desenhado é então
+\begin{equation}
+    \widehat{P}_{D,b}^{\mathrm{corr}}=\frac{1}{N_{1,b}^{\mathrm{test}}}
+    \sum_{i\in H_1,b}\mathbf{1}\{|\tau_i|\geq\widehat{u}_{\mathrm{D3F},b}\}.
+    \label{eq:pd_classical_emp}
+\end{equation}
+Esse procedimento é finito e data-driven: o limiar muda por faixa de SNR, mas não é adaptado ao $h$ de cada pacote. Assim, ele não deve ser confundido nem com $u_0$ da Equação~\eqref{eq:limiar_tag}, que é analítico, nem com um CFAR instantâneo condicionado a $\hat h$. Além disso, a curva empírica usa $|\tau|$, ao passo que a fórmula fechada foi escrita para a estatística real de uma formulação complexa; essa diferença deve ser considerada ao comparar numericamente as duas curvas.
+
+\paragraph{(d) $P_D$ da DNN.}
+Para uma entrada $\mathbf{x}$, a última camada da rede calcula
+\begin{equation}
+    p_{\theta}(H_1\mid\mathbf{x})=\sigma(f_{\theta}(\mathbf{x}))
+    =\frac{1}{1+\exp[-f_{\theta}(\mathbf{x})]}.
+    \label{eq:dnn_score}
+\end{equation}
+O treinamento usa BCE, mas esse valor deve ser interpretado operacionalmente como um score monotônico de autenticidade, e não como uma probabilidade de detecção. O limiar $0{,}5$ é apenas a convenção padrão da sigmoide e não é o limiar usado para os pontos D3F do \textit{nn02c}. Para cada bin $b$, o notebook usa os scores de validação sob $H_0$ para calcular
+\begin{equation}
+    \widehat{\theta}_{\mathrm{DNN},b}=\widehat{\mu}_{0,b}^{(p)}
+    +\Phi^{-1}(1-\alpha)\widehat{\sigma}_{0,b}^{(p)},
+    \label{eq:threshold_dnn_d3f}
+\end{equation}
+e mede no teste sob $H_1$
+\begin{equation}
+    \widehat{P}_{D,b}^{\mathrm{DNN}}=\frac{1}{N_{1,b}^{\mathrm{test}}}
+    \sum_{i\in H_1,b}\mathbf{1}\{p_{\theta}(H_1\mid\mathbf{x}_i)
+    \geq\widehat{\theta}_{\mathrm{DNN},b}\}.
+    \label{eq:pd_dnn_d3f}
+\end{equation}
+Logo, a rede toma uma decisão binária somente depois que seu score é comparado com um limiar D3F calibrado por faixa de SNR. Ela não calcula diretamente a Equação~\eqref{eq:pd_teorico_tag}, não recebe $u_0$ como alvo e não produz $P_D$ para um único pacote: $P_D$ é a fração de pacotes $H_1$ corretamente classificados no conjunto de teste.
+
+\paragraph{Interpretação do aparente ganho da rede.}
+Uma rede que recebe apenas $|\tau|$ tem, em princípio, a mesma estatística escalar do correlator e não deve superar o LRT ideal. Já uma variante que recebe $\hat h$, o vetor bruto $z_{eq}$ ou produtos que preservam informação de escala pode explorar informação adicional sobre o canal e aprender uma fronteira condicionada ao pacote. Nesse caso, a comparação com o correlator empírico da Equação~\eqref{eq:pd_classical_emp} não é uma comparação de paridade informacional estrita. O resultado pode ser superior ao correlator de referência porque este usa um limiar por bin de SNR, enquanto a rede usa também informação presente nas entradas; isso não constitui violação de Neyman--Pearson nem prova que a rede superou o detector ótimo com o mesmo conhecimento.
+
+\paragraph{Condições para confiar no gráfico.}
+O gráfico é confiável como comparação empírica entre os procedimentos implementados, desde que se mantenham explícitos os seguintes limites: (i) as curvas DNN e correlator empírico usam limiares estimados em validação e $P_D$ medido em teste; (ii) a curva fechada usa o modelo Rayleigh--médio e não os scores da rede; (iii) no dataset do \textit{nn01}, $L$ varia entre 32 e 64 e é preenchido até $L_{\mathrm{FIXED}}=64$, enquanto a chamada da fórmula fechada usa o $L_{\mathrm{FIXED}}$ armazenado no arquivo; (iv) $\alpha=0{,}01$ é a tolerância empregada no \textit{nn02c}, embora outras partes do documento mencionem $10^{-7}$; e (v) a estatística usada na geração é real e assinada, enquanto a referência de Xie parte de uma formulação complexa e usa a parte real. Assim, a figura sustenta a afirmação de que determinadas entradas e o procedimento de calibração produzem maior $P_D$ neste experimento, mas não sustenta, sozinha, a afirmação de superioridade sobre o LRT teórico. Para essa afirmação mais forte, seria necessário comparar todas as variantes ao mesmo limiar, ao mesmo conhecimento de $h$ e à mesma taxa de falso positivo medida no conjunto de teste.
 
 \subsection{Auditoria de Paridade de Informação por Variante}\label{sec:info_audit}
 
@@ -137,20 +234,17 @@ A Variante V5 é a única comparação de paridade estrita (P) deste estudo: rec
 
 \subsection{Ablação z\_eq (NN\_02c)}\label{sec:ablation_zeq}
 
-O NN\_02c avaliou diretamente a suficiência do sinal residual de dimensão 1024. A Tabela~\ref{tab:zeq_ablation} sintetiza os resultados exportados em \texttt{nn02c\_ablation\_results.json}.
+O NN\_02c avaliou diretamente a suficiência do sinal residual de dimensão 1024. A Tabela~\ref{tab:zeq_ablation} sintetiza a comparação final entre o correlator clássico e as Variantes D e G, usando os resultados exportados em \texttt{nn02c\_ablation\_dnn\_results.json}.
 
 \begin{table}[htb]
-\caption{\label{tab:zeq_ablation}NN\_02c --- variantes com $z_{eq}$ e entradas auxiliares. $P_D$ (\%) sob $\alpha=10^{-7}$, $L=1024$, Rayleigh.}
+\caption{\label{tab:zeq_ablation}NN\_02c --- comparação final das Variantes D e G. $P_D$ (\%) sob $\alpha=0{,}01$, $L_{\mathrm{FIXED}}=64$, com $L\in[32,64]$ e preenchimento por zeros, em canal Rayleigh.}
 \begin{center}
 {\footnotesize
 \begin{tabular}{lcrrrrrrr}\toprule
 Variante & Info & 0~dB & 5~dB & 10~dB & 15~dB & 20~dB & 25~dB & 30~dB \\\midrule
-Clássico ($|\tau|$ analítico) & Ref. & 8{,}1 & 58{,}7 & 99{,}9 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\\midrule
-A: z\_eq somente             & P+CI & 0{,}4 & 0{,}1 & 0{,}0 & 86{,}2 & 100{,}0 & 100{,}0 & 100{,}0 \\
-B: z\_eq + h                 & S    & 0{,}2 & 0{,}1 & 0{,}0 & 88{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
-C: z\_eq + h + SNR           & S    & 0{,}0 & 0{,}0 & 0{,}0 & 99{,}3 & 100{,}0 & 0{,}0 & 0{,}0 \\
-D: z\_eq + $|\tau|$          & P+CI & \textbf{88{,}3} & \textbf{99{,}7} & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
-E: z\_eq - tag\_ref          & P+CI & 0{,}2 & 0{,}2 & 0{,}0 & 0{,}0 & 100{,}0 & 100{,}0 & 100{,}0 \\
+Clássico ($|\tau|$, D3F) & Ref. & 4{,}0 & 5{,}0 & 60{,}3 & 98{,}0 & 99{,}7 & 100{,}0 & 100{,}0 \\\midrule
+D: $z_{eq}+|\tau|$ & DNN + correlador & 51{,}6 & 77{,}2 & 93{,}5 & 99{,}1 & 99{,}9 & 100{,}0 & 100{,}0 \\
+G: $z_{eq}\odot tag_{ref}$ & DNN + produtos ponto a ponto & \textbf{61{,}1} & \textbf{84{,}0} & \textbf{96{,}6} & \textbf{99{,}5} & 99{,}9 & 100{,}0 & 100{,}0 \\
 \bottomrule
 \end{tabular}
 }
@@ -158,12 +252,12 @@ E: z\_eq - tag\_ref          & P+CI & 0{,}2 & 0{,}2 & 0{,}0 & 0{,}0 & 100{,}0 & 
 \footnotesize\textit{Legenda}: ver Seção~\ref{sec:info_audit} e Tabela~\ref{tab:tau_ablation}. P+CI = paridade nominal, com canal instantâneo implicitamente acessível via escala do vetor bruto $z_{eq}$; S = informação superior explícita ($\hat h$ e/ou SNR nominal como entrada direta).
 \end{table}
 
-As variantes A e B confirmam limitação estrutural de entrada baseada apenas em $z_{eq}$ no regime de baixo SNR, com desempenho praticamente nulo entre 0 e 10 dB. A Variante D, ao incorporar explicitamente $|\tau|$, recupera imediatamente o regime de alta detecção desde 0 dB, o que reforça o papel da estatística de correlação explícita como mecanismo de integração coerente. A Variante E mostra que o resíduo explícito $z_{eq} - \text{tag}_{ref}$ não resolve o problema de forma robusta em baixo SNR: os resultados permanecem muito baixos em 0--15 dB e só voltam a níveis elevados em 20 dB ou acima. A Variante C apresentou comportamento inconsistente em 25 e 30 dB no arquivo exportado; por essa razão, sua interpretação deve ser tratada como evidência preliminar e sujeita a validação adicional. Conforme discutido na Seção~\ref{sec:np_limit}, o teto teórico de desempenho de A, B, C e E é a paridade com o correlador clássico sob canal conhecido, nunca sua superação; a diferença observada em baixo SNR é uma limitação prática de estimação estatística em alta dimensão, não uma limitação de informação disponível.
+As variantes A e B confirmam limitação estrutural de entrada baseada apenas em $z_{eq}$ no regime de baixo SNR, com desempenho praticamente nulo entre 0 e 10 dB. A Variante D, ao incorporar explicitamente $|\tau|$, recupera imediatamente o regime de alta detecção desde 0 dB, o que reforça o papel da estatística de correlação explícita como mecanismo de integração coerente. A Variante G, por preservar os produtos elemento a elemento $z_{eq}\odot tag_{ref}$, alcança $61{,}1\%$ em 0 dB, $84{,}0\%$ em 5 dB e $96{,}6\%$ em 10 dB, superando a Variante D nesses três pontos. Esse resultado é compatível com a hipótese de que a rede se beneficia de receber a contribuição de correlação distribuída ao longo do pacote, em vez de apenas sua soma escalar. A Variante E mostra que o resíduo explícito $z_{eq} - \text{tag}_{ref}$ não resolve o problema de forma robusta em baixo SNR: os resultados permanecem muito baixos em 0--15 dB e só voltam a níveis elevados em 20 dB ou acima. A Variante C apresentou comportamento inconsistente em 25 e 30 dB no arquivo exportado; por essa razão, sua interpretação deve ser tratada como evidência preliminar e sujeita a validação adicional. Conforme discutido na Seção~\ref{sec:np_limit}, o teto teórico de desempenho das variantes neurais não é demonstrado apenas pela superioridade numérica sobre o correlador de referência: é necessário considerar a informação adicional preservada por cada entrada e verificar a mesma taxa de falso positivo.
 
 \begin{figure}[htb]
     \centering
-    \includegraphics[width=\columnwidth]{NN_02c_D3F_PD_vs_SNR.png}
-    \caption{\label{fig:nn02c_pd_snr}NN\_02c: desempenho $P_D$ versus SNR das variantes A, B, C, D e E para entradas baseadas em $z_{eq}$.}
+    \includegraphics[width=\columnwidth]{NN02c_D_vs_G_PD_vs_SNR.png}
+    \caption{\label{fig:nn02c_pd_snr}NN\_02c: comparação de $P_D$ versus SNR entre o correlador clássico e as Variantes D e G. A Variante D recebe $z_{eq}$ e $|\tau|$; a Variante G recebe o produto elemento a elemento $z_{eq}\odot tag_{ref}$.}
 \end{figure}
 
 \begin{figure}[htb]
@@ -174,7 +268,7 @@ As variantes A e B confirmam limitação estrutural de entrada baseada apenas em
 
 \section{Conclusões}\label{sec:conclusions}
 
-Os resultados executados em NN\_02b, NN\_02c e NN\_07 confirmam três conclusões centrais. A primeira é que a representação de entrada domina o desempenho em baixo SNR. Modelos que recebem estatísticas de correlação explícitas e informação instantânea de canal superam de forma consistente a referência clássica em 0 dB. A segunda é que o núcleo $[|\tau|,\hat{h}]$ permanece o melhor compromisso entre desempenho, interpretabilidade e simplicidade, atingindo $84{,}7\%$ de detecção em 0 dB com dimensionalidade mínima. A terceira é que variantes baseadas em $z_{eq}$ somente exibem limitação estrutural em baixo SNR, e a inclusão explícita de $|\tau|$ restaura desempenho elevado, como observado na Variante D do NN\_02c.
+Os resultados executados em NN\_02b, NN\_02c e NN\_07 confirmam três conclusões centrais. A primeira é que a representação de entrada domina o desempenho em baixo SNR. Modelos que recebem estatísticas de correlação explícitas ou preservam informação de canal superam de forma consistente a referência clássica em 0 dB. A segunda é que, no experimento final do NN\_02c, a Variante G alcança $61{,}1\%$ de detecção em 0 dB, contra $51{,}6\%$ da Variante D, indicando que a entrega ponto a ponto do produto $z_{eq}\odot tag_{ref}$ preserva informação que não está disponível quando a correlação é reduzida imediatamente a um único escalar. A terceira é que essa melhora deve ser interpretada como evidência experimental de uma representação mais adequada, e não como prova de superação do LRT teórico; D e G continuam usando limiares D3F calibrados por faixa de SNR.
 
 A consolidação no NN\_07 confirmou que os ganhos observados nos notebooks individuais não são artefatos locais de execução, mas refletem uma tendência estável do problema: integração coerente explícita e adaptação ao canal instantâneo são os dois fatores determinantes sob restrição ultraestrita de falso alarme ($\alpha=10^{-7}$). Esses resultados sustentam a formulação do detector orientado a dados no contexto de PLA com fading Rayleigh.
 
